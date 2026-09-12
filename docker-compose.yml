@@ -1,0 +1,91 @@
+# ============================================================
+# Aethel — Docker Compose (Development)
+# ============================================================
+# Usage: docker-compose up --build
+# All services share the 'aethel-network' bridge network.
+# Internal DNS: core-api, payment-api, frontend
+
+services:
+  # ── Core API ───────────────────────────────────────────────
+  core-api:
+    build:
+      context: ./core-api
+      dockerfile: Dockerfile
+    container_name: aethel-core-api
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=5000
+      - MONGO_URI=${MONGO_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+      - SERVICE_SECRET=${SERVICE_SECRET}
+      - PAYMENT_SERVICE_URL=http://payment-api:5001
+    volumes:
+      - ./core-api/src:/app/src:delegated
+    networks:
+      - aethel-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5000/health', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) })"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ── Payment API ────────────────────────────────────────────
+  payment-api:
+    build:
+      context: ./payment-api
+      dockerfile: Dockerfile
+    container_name: aethel-payment-api
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=5001
+      - MONGO_URI=${MONGO_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - SERVICE_SECRET=${SERVICE_SECRET}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - CORE_SERVICE_URL=http://core-api:5000
+    volumes:
+      - ./payment-api/src:/app/src:delegated
+    networks:
+      - aethel-network
+    depends_on:
+      core-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5001/health', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) })"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ── Frontend ───────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+    container_name: aethel-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    networks:
+      - aethel-network
+    depends_on:
+      core-api:
+        condition: service_healthy
+      payment-api:
+        condition: service_healthy
+
+networks:
+  aethel-network:
+    driver: bridge
+    name: aethel-network
