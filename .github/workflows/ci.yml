@@ -1,0 +1,41 @@
+name: Continuous Integration
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Create Test Environment Variables
+        run: |
+          touch .env
+          echo "NODE_ENV=test" >> .env
+          echo "MONGO_URI=${{ secrets.MONGO_URI_TEST || 'mongodb://mongodb:27017/aethel_test' }}" >> .env
+          echo "JWT_SECRET=test_jwt_secret_ci" >> .env
+          echo "SERVICE_SECRET=test_service_secret_ci" >> .env
+          echo "STRIPE_SECRET_KEY=sk_test_mock" >> .env
+          echo "STRIPE_WEBHOOK_SECRET=whsec_mock" >> .env
+
+      # We can optionally spin up a local MongoDB container for tests if MONGO_URI_TEST isn't provided
+      - name: Start MongoDB (if no external DB provided)
+        if: env.MONGO_URI_TEST == ''
+        run: docker run -d -p 27017:27017 --name mongodb mongo:6
+
+      - name: Run Integration Tests
+        run: |
+          docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from test-runner
+
+      - name: Tear Down
+        if: always()
+        run: docker-compose -f docker-compose.test.yml down -v
