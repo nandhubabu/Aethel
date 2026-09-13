@@ -52,7 +52,7 @@ const Home = () => {
         ) : (
           <>
             {/* Amazon Style Promotional Dense Blocks */}
-            <div className="grid md:grid-cols-3 gap-4" style={{ marginBottom: '2rem' }}>
+            <div className="grid grid-cols-4 gap-4" style={{ marginBottom: '2rem' }}>
               <div className="glass-panel" style={{ padding: '1rem' }}>
                 <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#111827' }}>Up to 70% off | Top Brands</h3>
                 <div className="promo-grid">
@@ -83,6 +83,19 @@ const Home = () => {
                 <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#111827' }}>Min 50% Off | Appliances</h3>
                 <img src="https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=600&auto=format&fit=crop" alt="Home" style={{ width: '100%', height: 'auto', borderRadius: '4px', objectFit: 'cover' }} />
                 <Link to="/products?category=home" style={{ display: 'inline-block', marginTop: '1rem', fontSize: '0.85rem', color: 'var(--secondary-hover)' }}>Explore Home</Link>
+              </div>
+
+              <div className="glass-panel" style={{ padding: '1rem' }}>
+                <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#111827' }}>New Arrivals | Toys & Games</h3>
+                <div className="promo-grid">
+                  {products.slice(0, 4).map(p => (
+                    <div key={p?._id || Math.random()}>
+                      <img src={'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=200&auto=format&fit=crop'} alt="Toys" />
+                      <span style={{ display: 'block', fontSize: '0.75rem', marginTop: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Toys & Games</span>
+                    </div>
+                  ))}
+                </div>
+                <Link to="/products?category=toys" style={{ display: 'inline-block', marginTop: '1rem', fontSize: '0.85rem', color: 'var(--secondary-hover)' }}>Shop Toys</Link>
               </div>
             </div>
 
