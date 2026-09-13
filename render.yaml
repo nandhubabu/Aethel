@@ -13,9 +13,9 @@ services:
         sync: false
       - key: JWT_SECRET
         sync: false
-      - key: PAYMENT_API_URL
-        value: https://aethel-payment-api.onrender.com/api/v1/payment
-      - key: INTERNAL_API_SECRET
+      - key: PAYMENT_SERVICE_URL
+        value: https://aethel-payment-api.onrender.com
+      - key: SERVICE_SECRET
         sync: false
 
   - type: web
@@ -30,9 +30,9 @@ services:
         value: 5001
       - key: MONGO_URI
         sync: false
-      - key: CORE_API_URL
-        value: https://aethel-core-api.onrender.com/internal
-      - key: INTERNAL_API_SECRET
+      - key: CORE_SERVICE_URL
+        value: https://aethel-core-api.onrender.com
+      - key: SERVICE_SECRET
         sync: false
       - key: RAZORPAY_KEY_ID
         sync: false
