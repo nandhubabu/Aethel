@@ -1,0 +1,17 @@
+name: Keep Render Services Alive
+
+on:
+  schedule:
+    # Runs every 14 minutes to prevent Render free tier from sleeping
+    - cron: '*/14 * * * *'
+  workflow_dispatch: # Allows manual triggering from GitHub UI
+
+jobs:
+  ping-services:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Core API
+        run: curl -s -f https://aethel-core-api.onrender.com/health || echo "Core API ping failed, but continuing"
+
+      - name: Ping Payment API
+        run: curl -s -f https://aethel-payment-api.onrender.com/health || echo "Payment API ping failed, but continuing"
