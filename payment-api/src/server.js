@@ -22,9 +22,9 @@ const app = express();
 // ── Global Middleware ──────────────────────────────────────
 app.use(helmet());
 app.use(cors({
-  origin: env.isProduction
-    ? process.env.FRONTEND_URL || 'http://localhost'
-    : '*',
+  origin: function (origin, callback) {
+    callback(null, true);
+  },
   credentials: true,
 }));
 
