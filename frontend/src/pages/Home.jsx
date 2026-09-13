@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../api/client';
 import ProductCard from '../components/ProductCard';
+import CategoryStrip from '../components/CategoryStrip';
 import { Link } from 'react-router-dom';
 
 const Home = () => {
@@ -43,6 +44,8 @@ const Home = () => {
   return (
     <div style={{ background: 'var(--bg-main)', minHeight: '100vh', paddingBottom: '4rem' }}>
       
+      <CategoryStrip />
+
       <div className="container" style={{ marginTop: '1.5rem' }}>
         
         {/* Massive Hero Banner Carousel Placeholder */}
