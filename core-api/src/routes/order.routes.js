@@ -1,6 +1,6 @@
 const { Router } = require('express');
 const { z } = require('zod');
-const { checkout, getMyOrders, getOrder, getVendorSales } = require('../controllers/order.controller');
+const { checkout, verifyPayment, getMyOrders, getOrder, getVendorSales } = require('../controllers/order.controller');
 const { authenticate, authorize } = require('../middleware/auth');
 const { validateRequest } = require('../middleware/validateRequest');
 
@@ -22,6 +22,7 @@ const checkoutSchema = z.object({
 });
 
 router.post('/checkout', validateRequest(checkoutSchema), checkout);
+router.post('/verify-payment', verifyPayment);
 router.get('/', getMyOrders);
 router.get('/vendor/sales', authorize('vendor', 'admin'), getVendorSales);
 router.get('/:id', getOrder);

@@ -1,13 +1,9 @@
-const Stripe = require('stripe');
+const Razorpay = require('razorpay');
 const { env } = require('./env');
-const logger = require('../utils/logger');
 
-const stripe = new Stripe(env.stripeSecretKey, {
-  apiVersion: '2024-06-20',
-  maxNetworkRetries: 2,
-  timeout: 10000,
+const razorpay = new Razorpay({
+  key_id: env.razorpayKeyId,
+  key_secret: env.razorpayKeySecret,
 });
 
-logger.info('Stripe SDK initialized');
-
-module.exports = stripe;
+module.exports = razorpay;

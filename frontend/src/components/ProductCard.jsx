@@ -29,7 +29,7 @@ const ProductCard = ({ product, onAddToCart }) => {
         </Link>
         
         <div className="flex justify-between items-center" style={{ marginTop: 'auto', paddingTop: '1rem' }}>
-          <span className="product-price">${price.toFixed(2)}</span>
+          <span className="product-price">₹{price.toFixed(2)}</span>
           <button 
             onClick={() => onAddToCart && onAddToCart(product)}
             className="btn btn-secondary"

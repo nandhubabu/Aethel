@@ -57,7 +57,7 @@ const ProductDetail = () => {
           <h1 style={{ fontSize: '2.5rem', marginBottom: '1rem', lineHeight: 1.2 }}>{product.title}</h1>
           
           <div className="flex items-center gap-4" style={{ marginBottom: '1.5rem' }}>
-            <span style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--primary)' }}>${product.price.toFixed(2)}</span>
+            <span style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--primary)' }}>₹{product.price.toFixed(2)}</span>
             <div className="flex items-center gap-1" style={{ color: 'var(--warning)' }}>
               <Star size={18} fill="currentColor" />
               <span>{product.averageRating > 0 ? product.averageRating.toFixed(1) : 'No reviews'}</span>

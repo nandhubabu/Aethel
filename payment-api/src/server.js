@@ -29,7 +29,7 @@ app.use(cors({
 }));
 
 // IMPORTANT: Webhook routes must be registered BEFORE express.json()
-// because Stripe needs the raw body for signature verification.
+// because Razorpay needs the raw body for signature verification.
 app.use('/api/v1/payments/webhooks', webhookRoutes);
 
 // JSON body parser for all other routes

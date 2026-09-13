@@ -1,4 +1,4 @@
-const stripe = require('../config/stripe');
+const crypto = require('crypto');
 const { env } = require('../config/env');
 const Transaction = require('../models/Transaction');
 const Order = require('../models/Order');
@@ -6,145 +6,143 @@ const { coreApiRequest } = require('../utils/coreApiClient');
 const logger = require('../utils/logger');
 
 /**
- * POST /api/v1/payments/webhooks/stripe
- * Stripe webhook endpoint.
- * Verifies signature, processes payment events, and syncs state with Core API.
+ * POST /api/v1/payments/webhooks/razorpay
+ * Razorpay webhook endpoint.
+ * Verifies signature and processes payment events.
  */
-async function handleStripeWebhook(req, res) {
-  const sig = req.headers['stripe-signature'];
+async function handleRazorpayWebhook(req, res) {
+  const signature = req.headers['x-razorpay-signature'];
 
-  if (!sig) {
-    logger.warn('Webhook received without stripe-signature header');
-    return res.status(400).json({ success: false, message: 'Missing stripe-signature header.' });
+  if (!signature) {
+    logger.warn('Webhook received without x-razorpay-signature header');
+    return res.status(400).json({ success: false, message: 'Missing x-razorpay-signature header.' });
   }
 
-  let event;
+  // Verify webhook signature
+  const webhookSecret = env.razorpayWebhookSecret;
+  if (webhookSecret) {
+    const expectedSignature = crypto
+      .createHmac('sha256', webhookSecret)
+      .update(req.rawBody)
+      .digest('hex');
 
-  try {
-    event = stripe.webhooks.constructEvent(req.rawBody, sig, env.stripeWebhookSecret);
-  } catch (err) {
-    logger.error({ error: err.message }, 'Webhook signature verification failed');
-    return res.status(400).json({ success: false, message: `Webhook Error: ${err.message}` });
+    if (expectedSignature !== signature) {
+      logger.error('Webhook signature verification failed');
+      return res.status(400).json({ success: false, message: 'Invalid webhook signature.' });
+    }
   }
 
-  logger.info({ eventType: event.type, eventId: event.id }, 'Webhook event received');
+  const event = req.body;
+  logger.info({ eventType: event.event, eventId: event.payload?.payment?.entity?.id }, 'Webhook event received');
 
   try {
-    switch (event.type) {
-      case 'payment_intent.succeeded':
-        await handlePaymentSuccess(event.data.object);
+    switch (event.event) {
+      case 'payment.captured':
+        await handlePaymentCaptured(event.payload.payment.entity);
         break;
 
-      case 'payment_intent.payment_failed':
-        await handlePaymentFailure(event.data.object);
+      case 'payment.failed':
+        await handlePaymentFailed(event.payload.payment.entity);
         break;
 
-      case 'charge.refunded':
-        await handleRefund(event.data.object);
+      case 'refund.processed':
+        await handleRefundProcessed(event.payload.refund.entity);
         break;
 
       default:
-        logger.info({ eventType: event.type }, 'Unhandled webhook event type');
+        logger.info({ eventType: event.event }, 'Unhandled webhook event type');
     }
   } catch (err) {
-    // Log but still return 200 to prevent Stripe from retrying indefinitely
-    logger.error({ err, eventType: event.type, eventId: event.id }, 'Error processing webhook event');
+    logger.error({ err, eventType: event.event }, 'Error processing webhook event');
   }
 
-  // Always acknowledge receipt to Stripe
-  res.json({ received: true });
+  // Always return 200 to Razorpay
+  res.json({ status: 'ok' });
 }
 
 /**
- * Handle successful payment.
- * Updates transaction, finds the order, and notifies Core API to update inventory.
+ * Handle successful payment capture.
  */
-async function handlePaymentSuccess(paymentIntent) {
-  const { id: paymentIntentId, metadata } = paymentIntent;
+async function handlePaymentCaptured(payment) {
+  const razorpayOrderId = payment.order_id;
+  const razorpayPaymentId = payment.id;
 
-  logger.info({ paymentIntentId }, 'Processing payment_intent.succeeded');
+  logger.info({ razorpayOrderId, razorpayPaymentId }, 'Processing payment.captured');
 
-  // Find and update transaction
-  const transaction = await Transaction.findOne({ paymentIntentId });
+  const transaction = await Transaction.findOne({ razorpayOrderId });
   if (!transaction) {
-    logger.error({ paymentIntentId }, 'Transaction not found for succeeded payment');
+    logger.error({ razorpayOrderId }, 'Transaction not found for captured payment');
     return;
   }
 
-  // Idempotency check: skip if already processed
+  // Idempotency check
   if (transaction.webhookProcessed && transaction.status === 'succeeded') {
-    logger.info({ paymentIntentId }, 'Webhook already processed (idempotent skip)');
+    logger.info({ razorpayOrderId }, 'Webhook already processed (idempotent skip)');
     return;
   }
 
   transaction.status = 'succeeded';
+  transaction.razorpayPaymentId = razorpayPaymentId;
   transaction.webhookProcessed = true;
-  transaction.stripeResponse = {
-    ...transaction.stripeResponse,
-    status: 'succeeded',
-    amount_received: paymentIntent.amount_received,
+  transaction.razorpayResponse = {
+    ...transaction.razorpayResponse,
+    status: 'captured',
+    payment_id: razorpayPaymentId,
+    amount: payment.amount,
+    method: payment.method,
   };
   await transaction.save();
 
-  // Find the order by paymentIntentId
-  const order = await Order.findOne({ paymentIntentId });
-  if (!order) {
-    logger.error({ paymentIntentId }, 'Order not found for succeeded payment');
-    return;
-  }
-
-  // Notify Core API to update order status and decrement inventory
-  try {
-    await coreApiRequest('POST', `/internal/orders/${order._id}/update-status`, {
-      paymentStatus: 'paid',
-      paymentIntentId,
-    });
-    logger.info({ orderId: order._id, paymentIntentId }, 'Core API notified of payment success');
-  } catch (err) {
-    logger.error(
-      { err: err.message, orderId: order._id, paymentIntentId },
-      'Failed to notify Core API of payment success — will need manual reconciliation'
-    );
+  // Find the order and notify Core API
+  const order = await Order.findOne({ paymentIntentId: razorpayOrderId });
+  if (order) {
+    try {
+      await coreApiRequest('POST', `/internal/orders/${order._id}/update-status`, {
+        paymentStatus: 'paid',
+        paymentIntentId: razorpayOrderId,
+      });
+      logger.info({ orderId: order._id, razorpayOrderId }, 'Core API notified of payment success');
+    } catch (err) {
+      logger.error({ err: err.message, orderId: order._id }, 'Failed to notify Core API of payment success');
+    }
   }
 }
 
 /**
  * Handle failed payment.
  */
-async function handlePaymentFailure(paymentIntent) {
-  const { id: paymentIntentId } = paymentIntent;
+async function handlePaymentFailed(payment) {
+  const razorpayOrderId = payment.order_id;
 
-  logger.info({ paymentIntentId }, 'Processing payment_intent.payment_failed');
+  logger.info({ razorpayOrderId }, 'Processing payment.failed');
 
-  const transaction = await Transaction.findOne({ paymentIntentId });
+  const transaction = await Transaction.findOne({ razorpayOrderId });
   if (!transaction) {
-    logger.error({ paymentIntentId }, 'Transaction not found for failed payment');
+    logger.error({ razorpayOrderId }, 'Transaction not found for failed payment');
     return;
   }
 
   if (transaction.webhookProcessed && transaction.status === 'failed') {
-    logger.info({ paymentIntentId }, 'Failure webhook already processed (idempotent skip)');
     return;
   }
 
   transaction.status = 'failed';
   transaction.webhookProcessed = true;
-  transaction.stripeResponse = {
-    ...transaction.stripeResponse,
+  transaction.razorpayResponse = {
+    ...transaction.razorpayResponse,
     status: 'failed',
-    last_payment_error: paymentIntent.last_payment_error?.message || 'Unknown error',
+    error_code: payment.error_code,
+    error_description: payment.error_description,
   };
   await transaction.save();
 
-  // Find order and notify Core API
-  const order = await Order.findOne({ paymentIntentId });
+  const order = await Order.findOne({ paymentIntentId: razorpayOrderId });
   if (order) {
     try {
       await coreApiRequest('POST', `/internal/orders/${order._id}/update-status`, {
         paymentStatus: 'failed',
-        paymentIntentId,
+        paymentIntentId: razorpayOrderId,
       });
-      logger.info({ orderId: order._id }, 'Core API notified of payment failure');
     } catch (err) {
       logger.error({ err: err.message, orderId: order._id }, 'Failed to notify Core API of payment failure');
     }
@@ -154,31 +152,18 @@ async function handlePaymentFailure(paymentIntent) {
 /**
  * Handle refund.
  */
-async function handleRefund(charge) {
-  const paymentIntentId = charge.payment_intent;
-  if (!paymentIntentId) return;
+async function handleRefundProcessed(refund) {
+  const razorpayPaymentId = refund.payment_id;
+  if (!razorpayPaymentId) return;
 
-  logger.info({ paymentIntentId }, 'Processing charge.refunded');
+  logger.info({ razorpayPaymentId }, 'Processing refund.processed');
 
-  const transaction = await Transaction.findOne({ paymentIntentId });
+  const transaction = await Transaction.findOne({ razorpayPaymentId });
   if (transaction) {
     transaction.status = 'refunded';
     transaction.webhookProcessed = true;
     await transaction.save();
   }
-
-  const order = await Order.findOne({ paymentIntentId });
-  if (order) {
-    try {
-      await coreApiRequest('POST', `/internal/orders/${order._id}/update-status`, {
-        paymentStatus: 'refunded',
-        paymentIntentId,
-      });
-      logger.info({ orderId: order._id }, 'Core API notified of refund');
-    } catch (err) {
-      logger.error({ err: err.message, orderId: order._id }, 'Failed to notify Core API of refund');
-    }
-  }
 }
 
-module.exports = { handleStripeWebhook };
+module.exports = { handleRazorpayWebhook };

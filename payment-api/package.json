@@ -1,7 +1,7 @@
 {
   "name": "aethel-payment-api",
   "version": "1.0.0",
-  "description": "Aethel E-Commerce — Payment Microservice (Stripe, Webhooks, Transactions)",
+  "description": "Aethel E-Commerce — Payment Microservice (Razorpay, Webhooks, Transactions)",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
@@ -16,8 +16,8 @@
     "morgan": "^1.10.0",
     "pino": "^9.3.2",
     "pino-pretty": "^11.2.2",
-    "stoppable": "^1.1.0",
-    "stripe": "^16.8.0"
+    "razorpay": "^2.9.4",
+    "stoppable": "^1.1.0"
   },
   "engines": {
     "node": ">=20.0.0"

@@ -1,16 +1,16 @@
-const stripe = require('../config/stripe');
+const razorpay = require('../config/stripe'); // file still named stripe.js for now
 const Transaction = require('../models/Transaction');
 const { AppError } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
 
 /**
- * POST /api/v1/payments/create-intent
+ * POST /api/v1/payments/create-order
  * Called internally by Core API (service-to-service).
- * Creates a Stripe PaymentIntent and stores a Transaction record.
+ * Creates a Razorpay Order and stores a Transaction record.
  */
-async function createPaymentIntent(req, res, next) {
+async function createPaymentOrder(req, res, next) {
   try {
-    const { amount, currency = 'usd', userId, userEmail, idempotencyKey } = req.body;
+    const { amount, currency = 'INR', userId, userEmail, idempotencyKey } = req.body;
 
     if (!amount || amount <= 0) {
       throw new AppError('Invalid payment amount.', 400);
@@ -26,74 +26,128 @@ async function createPaymentIntent(req, res, next) {
         logger.info({ idempotencyKey, transactionId: existing._id }, 'Returning existing transaction (idempotent)');
         return res.json({
           success: true,
-          message: 'Payment intent already exists (idempotent).',
+          message: 'Payment order already exists (idempotent).',
           data: {
-            clientSecret: existing.stripeResponse.client_secret || '',
-            paymentIntentId: existing.paymentIntentId,
+            razorpayOrderId: existing.razorpayOrderId,
+            amount: existing.amount,
+            currency: existing.currency,
             transactionId: existing._id,
           },
         });
       }
     }
 
-    // Convert dollars to cents for Stripe
-    const amountInCents = Math.round(amount * 100);
+    // Convert to paise (Razorpay expects amount in smallest currency unit)
+    const amountInPaise = Math.round(amount * 100);
 
-    // Create Stripe PaymentIntent
-    const paymentIntent = await stripe.paymentIntents.create(
-      {
-        amount: amountInCents,
-        currency: currency.toLowerCase(),
-        metadata: {
-          userId,
-          userEmail: userEmail || '',
-          idempotencyKey: idempotencyKey || '',
-        },
-        automatic_payment_methods: {
-          enabled: true,
-        },
+    // Create Razorpay Order
+    const razorpayOrder = await razorpay.orders.create({
+      amount: amountInPaise,
+      currency: currency.toUpperCase(),
+      receipt: idempotencyKey ? `rcpt_${idempotencyKey.substring(0, 30)}` : `rcpt_${Date.now()}`,
+      notes: {
+        userId,
+        userEmail: userEmail || '',
+        idempotencyKey: idempotencyKey || '',
       },
-      {
-        idempotencyKey: idempotencyKey ? `pi_${idempotencyKey}` : undefined,
-      }
-    );
+    });
 
     // Store transaction in ledger
     const transaction = await Transaction.create({
       userId,
       userEmail: userEmail || '',
-      paymentIntentId: paymentIntent.id,
+      razorpayOrderId: razorpayOrder.id,
       amount,
-      currency,
+      currency: currency.toUpperCase(),
       status: 'pending',
       idempotencyKey: idempotencyKey || undefined,
-      stripeResponse: {
-        id: paymentIntent.id,
-        client_secret: paymentIntent.client_secret,
-        status: paymentIntent.status,
+      razorpayResponse: {
+        id: razorpayOrder.id,
+        status: razorpayOrder.status,
+        amount: razorpayOrder.amount,
       },
     });
 
     logger.info(
-      { transactionId: transaction._id, paymentIntentId: paymentIntent.id, amount },
-      'Payment intent created'
+      { transactionId: transaction._id, razorpayOrderId: razorpayOrder.id, amount },
+      'Razorpay order created'
     );
 
     res.status(201).json({
       success: true,
-      message: 'Payment intent created.',
+      message: 'Razorpay order created.',
       data: {
-        clientSecret: paymentIntent.client_secret,
-        paymentIntentId: paymentIntent.id,
+        razorpayOrderId: razorpayOrder.id,
+        amount: amountInPaise,
+        currency: currency.toUpperCase(),
         transactionId: transaction._id,
       },
     });
   } catch (err) {
-    // Handle Stripe-specific errors
-    if (err.type && err.type.startsWith('Stripe')) {
-      logger.error({ stripeError: err.message, code: err.code }, 'Stripe error');
-      return next(new AppError(`Payment error: ${err.message}`, 402));
+    if (err.statusCode && err.error) {
+      logger.error({ razorpayError: err.error }, 'Razorpay error');
+      return next(new AppError(`Payment error: ${err.error.description || err.error}`, 402));
     }
+    next(err);
+  }
+}
+
+/**
+ * POST /api/v1/payments/verify
+ * Called by Core API after frontend completes payment.
+ * Verifies the Razorpay payment signature.
+ */
+async function verifyPayment(req, res, next) {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      throw new AppError('Missing payment verification parameters.', 400);
+    }
+
+    const crypto = require('crypto');
+    const { env } = require('../config/env');
+
+    // Verify signature: HMAC SHA256 of order_id + "|" + payment_id
+    const body = razorpay_order_id + '|' + razorpay_payment_id;
+    const expectedSignature = crypto
+      .createHmac('sha256', env.razorpayKeySecret)
+      .update(body)
+      .digest('hex');
+
+    if (expectedSignature !== razorpay_signature) {
+      logger.warn({ razorpay_order_id, razorpay_payment_id }, 'Invalid Razorpay signature');
+      throw new AppError('Payment verification failed — invalid signature.', 400);
+    }
+
+    // Update transaction
+    const transaction = await Transaction.findOne({ razorpayOrderId: razorpay_order_id });
+    if (!transaction) {
+      throw new AppError('Transaction not found.', 404);
+    }
+
+    transaction.status = 'succeeded';
+    transaction.razorpayPaymentId = razorpay_payment_id;
+    transaction.razorpaySignature = razorpay_signature;
+    transaction.webhookProcessed = true;
+    transaction.razorpayResponse = {
+      ...transaction.razorpayResponse,
+      payment_id: razorpay_payment_id,
+      status: 'captured',
+    };
+    await transaction.save();
+
+    logger.info({ razorpay_order_id, razorpay_payment_id }, 'Payment verified successfully');
+
+    res.json({
+      success: true,
+      message: 'Payment verified successfully.',
+      data: {
+        transactionId: transaction._id,
+        status: 'succeeded',
+      },
+    });
+  } catch (err) {
     next(err);
   }
 }
@@ -116,7 +170,7 @@ async function getTransaction(req, res, next) {
         status: transaction.status,
         amount: transaction.amount,
         currency: transaction.currency,
-        paymentIntentId: transaction.paymentIntentId,
+        razorpayOrderId: transaction.razorpayOrderId,
         createdAt: transaction.createdAt,
       },
     });
@@ -131,13 +185,13 @@ async function getTransaction(req, res, next) {
  */
 async function refundPayment(req, res, next) {
   try {
-    const { paymentIntentId, reason = 'requested_by_customer' } = req.body;
+    const { razorpayPaymentId, reason = 'requested_by_customer' } = req.body;
 
-    if (!paymentIntentId) {
-      throw new AppError('paymentIntentId is required.', 400);
+    if (!razorpayPaymentId) {
+      throw new AppError('razorpayPaymentId is required.', 400);
     }
 
-    const transaction = await Transaction.findOne({ paymentIntentId });
+    const transaction = await Transaction.findOne({ razorpayPaymentId });
     if (!transaction) {
       throw new AppError('Transaction not found.', 404);
     }
@@ -145,17 +199,19 @@ async function refundPayment(req, res, next) {
       throw new AppError('Can only refund succeeded payments.', 400);
     }
 
-    const refund = await stripe.refunds.create({
-      payment_intent: paymentIntentId,
-      reason,
+    const amountInPaise = Math.round(transaction.amount * 100);
+
+    const refund = await razorpay.payments.refund(razorpayPaymentId, {
+      amount: amountInPaise,
+      notes: { reason },
     });
 
     transaction.status = 'refunded';
-    transaction.stripeResponse.refundId = refund.id;
-    transaction.stripeResponse.refundStatus = refund.status;
+    transaction.razorpayResponse.refundId = refund.id;
+    transaction.razorpayResponse.refundStatus = refund.status;
     await transaction.save();
 
-    logger.info({ paymentIntentId, refundId: refund.id }, 'Refund processed');
+    logger.info({ razorpayPaymentId, refundId: refund.id }, 'Refund processed');
 
     res.json({
       success: true,
@@ -166,11 +222,11 @@ async function refundPayment(req, res, next) {
       },
     });
   } catch (err) {
-    if (err.type && err.type.startsWith('Stripe')) {
-      return next(new AppError(`Refund error: ${err.message}`, 402));
+    if (err.statusCode && err.error) {
+      return next(new AppError(`Refund error: ${err.error.description || err.error}`, 402));
     }
     next(err);
   }
 }
 
-module.exports = { createPaymentIntent, getTransaction, refundPayment };
+module.exports = { createPaymentOrder, verifyPayment, getTransaction, refundPayment };

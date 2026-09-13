@@ -57,54 +57,107 @@ async function checkout(req, res, next) {
       if (existingOrder.paymentStatus === 'paid') {
         throw new AppError('This order has already been paid.', 409);
       }
-      // Return existing unpaid order's client secret
+      // Return existing unpaid order's Razorpay order ID
       if (existingOrder.paymentIntentId) {
         return res.json({
           success: true,
           message: 'Order already exists. Complete payment.',
           data: {
             orderId: existingOrder._id,
-            clientSecret: existingOrder.paymentIntentId,
+            razorpayOrderId: existingOrder.paymentIntentId,
             totalAmount: existingOrder.totalAmount,
           },
         });
       }
     }
 
-    // 5. Call Payment API to create payment intent
-    const paymentResponse = await paymentRequest('POST', '/api/v1/payments/create-intent', {
+    // 5. Call Payment API to create Razorpay order
+    const paymentResponse = await paymentRequest('POST', '/api/v1/payments/create-order', {
       amount: totalAmount,
-      currency: 'usd',
+      currency: 'INR',
       userId: req.user.id,
       userEmail: req.user.email,
       idempotencyKey,
     });
 
-    const { clientSecret, paymentIntentId, transactionId } = paymentResponse.data.data;
+    const { razorpayOrderId, transactionId } = paymentResponse.data.data;
 
-    // 6. Create order
+    // 6. Create order (paymentIntentId field stores razorpayOrderId)
     const order = await Order.create({
       user: req.user.id,
       items: orderItems,
       totalAmount,
       shippingAddress,
-      paymentIntentId,
+      paymentIntentId: razorpayOrderId,
       paymentStatus: 'processing',
       idempotencyKey,
     });
 
-    logger.info({ orderId: order._id, totalAmount, paymentIntentId }, 'Checkout initiated');
+    logger.info({ orderId: order._id, totalAmount, razorpayOrderId }, 'Checkout initiated');
 
     res.status(201).json({
       success: true,
       message: 'Checkout initiated. Complete payment on the client.',
       data: {
         orderId: order._id,
-        clientSecret,
+        razorpayOrderId,
         transactionId,
         totalAmount,
       },
     });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * POST /api/v1/orders/verify-payment
+ * Frontend calls this after Razorpay checkout completes to verify and finalize.
+ */
+async function verifyPayment(req, res, next) {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId } = req.body;
+
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      throw new AppError('Missing payment verification parameters.', 400);
+    }
+
+    // Forward verification to Payment API
+    const verifyResponse = await paymentRequest('POST', '/api/v1/payments/verify', {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+    });
+
+    if (verifyResponse.data.success) {
+      // Update order status
+      const order = await Order.findOne({ paymentIntentId: razorpay_order_id });
+      if (order) {
+        order.paymentStatus = 'paid';
+        order.orderStatus = 'confirmed';
+        await order.save();
+
+        // Decrement stock
+        for (const item of order.items) {
+          await Product.findByIdAndUpdate(item.product, {
+            $inc: { stock: -item.quantity },
+          });
+        }
+
+        // Clear cart
+        await Cart.findOneAndUpdate({ user: req.user.id }, { $set: { items: [] } });
+
+        logger.info({ orderId: order._id }, 'Payment verified, order confirmed, inventory decremented');
+      }
+
+      return res.json({
+        success: true,
+        message: 'Payment verified and order confirmed.',
+        data: { orderId: order?._id || orderId },
+      });
+    }
+
+    throw new AppError('Payment verification failed.', 400);
   } catch (err) {
     next(err);
   }
@@ -235,4 +288,4 @@ async function updateOrderStatus(req, res, next) {
   }
 }
 
-module.exports = { checkout, getMyOrders, getOrder, getVendorSales, updateOrderStatus };
+module.exports = { checkout, verifyPayment, getMyOrders, getOrder, getVendorSales, updateOrderStatus };

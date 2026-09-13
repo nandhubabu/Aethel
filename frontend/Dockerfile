@@ -15,8 +15,8 @@ RUN npm ci && npm cache clean --force
 COPY . .
 
 # Vite reads VITE_ prefixed env vars at build time
-ARG VITE_STRIPE_PUBLISHABLE_KEY
-ENV VITE_STRIPE_PUBLISHABLE_KEY=${VITE_STRIPE_PUBLISHABLE_KEY}
+ARG VITE_RAZORPAY_KEY_ID
+ENV VITE_RAZORPAY_KEY_ID=${VITE_RAZORPAY_KEY_ID}
 
 RUN npm run build
 

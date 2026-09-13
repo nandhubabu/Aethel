@@ -16,11 +16,20 @@ const transactionSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
-    paymentIntentId: {
+    razorpayOrderId: {
       type: String,
       required: true,
       unique: true,
       index: true,
+    },
+    razorpayPaymentId: {
+      type: String,
+      default: '',
+      index: true,
+    },
+    razorpaySignature: {
+      type: String,
+      default: '',
     },
     amount: {
       type: Number,
@@ -30,8 +39,8 @@ const transactionSchema = new mongoose.Schema(
     currency: {
       type: String,
       required: true,
-      default: 'usd',
-      lowercase: true,
+      default: 'INR',
+      uppercase: true,
     },
     status: {
       type: String,
@@ -39,7 +48,7 @@ const transactionSchema = new mongoose.Schema(
       default: 'pending',
       index: true,
     },
-    stripeResponse: {
+    razorpayResponse: {
       type: mongoose.Schema.Types.Mixed,
       default: {},
     },

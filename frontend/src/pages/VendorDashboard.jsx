@@ -45,7 +45,7 @@ const VendorDashboard = () => {
           </div>
           <div>
             <p style={{ color: 'var(--text-muted)' }}>Total Revenue</p>
-            <h3 style={{ fontSize: '1.5rem' }}>${totalRevenue.toFixed(2)}</h3>
+            <h3 style={{ fontSize: '1.5rem' }}>₹{totalRevenue.toFixed(2)}</h3>
           </div>
         </div>
         
@@ -98,7 +98,7 @@ const VendorDashboard = () => {
                     <img src={p.images?.[0] || 'https://via.placeholder.com/50'} style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} />
                     <span>{p.title}</span>
                   </div>
-                  <span style={{ fontWeight: 'bold' }}>${p.price.toFixed(2)}</span>
+                  <span style={{ fontWeight: 'bold' }}>₹{p.price.toFixed(2)}</span>
                 </li>
               ))}
             </ul>

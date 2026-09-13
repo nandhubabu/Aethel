@@ -75,7 +75,7 @@ const Cart = () => {
                   <div className="flex justify-between">
                     <div>
                       <h3 style={{ fontSize: '1.1rem', marginBottom: '0.25rem' }}>{item.product.title}</h3>
-                      <p style={{ color: 'var(--primary)', fontWeight: 'bold' }}>${item.priceAtAdd.toFixed(2)}</p>
+                      <p style={{ color: 'var(--primary)', fontWeight: 'bold' }}>₹{item.priceAtAdd.toFixed(2)}</p>
                     </div>
                     <button onClick={() => handleRemove(item._id)} style={{ background: 'none', color: 'var(--error)' }}>
                       <Trash2 size={20} />
@@ -89,7 +89,7 @@ const Cart = () => {
                       <button onClick={() => handleUpdateQuantity(item._id, item.quantity + 1)} className="btn btn-secondary" style={{ padding: '0.25rem' }}><Plus size={16} /></button>
                     </div>
                     <span style={{ color: 'var(--text-muted)' }}>
-                      Subtotal: ${(item.priceAtAdd * item.quantity).toFixed(2)}
+                      Subtotal: ₹{(item.priceAtAdd * item.quantity).toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -104,7 +104,7 @@ const Cart = () => {
             
             <div className="flex justify-between items-center" style={{ marginBottom: '1rem', color: 'var(--text-muted)' }}>
               <span>Items ({cart.itemCount})</span>
-              <span>${cart.totalPrice.toFixed(2)}</span>
+              <span>₹{cart.totalPrice.toFixed(2)}</span>
             </div>
             
             <div className="flex justify-between items-center" style={{ marginBottom: '1rem', color: 'var(--text-muted)' }}>
@@ -114,7 +114,7 @@ const Cart = () => {
             
             <div className="flex justify-between items-center" style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)', fontSize: '1.25rem', fontWeight: 'bold' }}>
               <span>Subtotal</span>
-              <span style={{ color: 'var(--primary)' }}>${cart.totalPrice.toFixed(2)}</span>
+              <span style={{ color: 'var(--primary)' }}>₹{cart.totalPrice.toFixed(2)}</span>
             </div>
             
             <button 
