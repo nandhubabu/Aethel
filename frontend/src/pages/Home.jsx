@@ -89,10 +89,13 @@ const Home = () => {
         {/* Interactive Hero Carousel */}
         <div style={{ 
           width: '100%', height: '350px', 
-          background: `url(${banners[currentSlide].image}) center/cover no-repeat`, 
+          backgroundImage: `url("${banners[currentSlide].image}")`,
+          backgroundPosition: 'center',
+          backgroundSize: 'cover',
+          backgroundRepeat: 'no-repeat',
           borderRadius: '12px', position: 'relative', overflow: 'hidden', 
           marginBottom: '2rem', display: 'flex', alignItems: 'center',
-          transition: 'background 0.5s ease-in-out'
+          transition: 'background-image 0.5s ease-in-out'
         }}>
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(0,0,0,0.8), rgba(0,0,0,0.2))' }}></div>
           
