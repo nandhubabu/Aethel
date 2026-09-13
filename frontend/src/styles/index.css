@@ -334,7 +334,8 @@ input:focus, textarea:focus, select:focus {
 .promo-grid img {
   width: 100%;
   aspect-ratio: 1;
-  object-fit: cover;
+  object-fit: contain;
+  background: #fff;
   border-radius: 4px;
 }
 
