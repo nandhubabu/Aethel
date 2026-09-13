@@ -22,7 +22,6 @@ const createProductSchema = z.object({
 
 // Public routes
 // Public and specific routes
-router.post('/seed-data-temp', seedData);
 router.get('/', getProducts);
 router.get('/vendor/my-products', authenticate, authorize('vendor', 'admin'), getVendorProducts);
 router.get('/:id', getProduct);
