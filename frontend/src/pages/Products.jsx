@@ -48,29 +48,7 @@ const Products = () => {
     <div className="container" style={{ padding: '2rem 0' }}>
       <h1 className="page-title">Explore Products</h1>
       
-      {/* Filters & Search */}
-      <div className="glass-panel" style={{ marginBottom: '2rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-        <form onSubmit={handleSearch} style={{ flexGrow: 1, display: 'flex', gap: '0.5rem' }}>
-          <input 
-            type="text" 
-            placeholder="Search products..." 
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ flexGrow: 1 }}
-          />
-          <button type="submit" className="btn btn-primary">Search</button>
-        </form>
-        
-        <select 
-          value={category} 
-          onChange={(e) => setCategory(e.target.value)}
-          style={{ width: 'auto', minWidth: '200px' }}
-        >
-          {categories.map(c => (
-            <option key={c} value={c}>{c === 'All' ? 'All Categories' : c.charAt(0).toUpperCase() + c.slice(1)}</option>
-          ))}
-        </select>
-      </div>
+
 
       {loading ? (
         <div className="flex justify-center" style={{ padding: '4rem 0' }}><div className="spinner"></div></div>
