@@ -301,6 +301,44 @@ input:focus, textarea:focus, select:focus {
   margin-bottom: 1.25rem;
 }
 
+/* Horizontal Scroll Utilities */
+.horizontal-scroll {
+  display: flex;
+  overflow-x: auto;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  scrollbar-width: thin;
+  scroll-snap-type: x mandatory;
+}
+.horizontal-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+.horizontal-scroll::-webkit-scrollbar-track {
+  background: #f1f3f6;
+}
+.horizontal-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+.horizontal-scroll > * {
+  scroll-snap-align: start;
+  flex: 0 0 auto;
+}
+
+/* Dense Promo Grids */
+.promo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+.promo-grid img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+
 .form-label {
   display: block;
   margin-bottom: 0.5rem;

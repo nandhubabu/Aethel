@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../api/client';
 import ProductCard from '../components/ProductCard';
+import CategoryStrip from '../components/CategoryStrip';
 import { Link } from 'react-router-dom';
 
 const Home = () => {
@@ -10,7 +11,7 @@ const Home = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await apiClient.get('/products?limit=8&sort=newest');
+        const res = await apiClient.get('/products?limit=12&sort=newest');
         setProducts(res.data);
       } catch (error) {
         console.error('Failed to fetch products', error);
@@ -31,50 +32,87 @@ const Home = () => {
   };
 
   return (
-    <div className="container">
-      {/* Hero Section */}
-      <section style={{ 
-        padding: '6rem 0', 
-        textAlign: 'center',
-        background: 'radial-gradient(ellipse at center, rgba(99, 102, 241, 0.15) 0%, rgba(10, 10, 12, 0) 70%)'
-      }}>
-        <h1 style={{ fontSize: '4rem', fontWeight: 800, marginBottom: '1.5rem', background: 'linear-gradient(to right, #fff, #a5b4fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-          Discover the Extraordinary
-        </h1>
-        <p style={{ fontSize: '1.25rem', color: 'var(--text-muted)', maxWidth: '600px', margin: '0 auto 2.5rem' }}>
-          Aethel is the premium marketplace for curated, high-quality products from independent creators and top brands.
-        </p>
-        <div className="flex justify-center gap-4">
-          <Link to="/products" className="btn btn-primary" style={{ padding: '1rem 2rem', fontSize: '1.1rem' }}>
-            Shop Collection
-          </Link>
-          <Link to="/register" className="btn btn-secondary" style={{ padding: '1rem 2rem', fontSize: '1.1rem' }}>
-            Become a Vendor
-          </Link>
-        </div>
-      </section>
-
-      {/* Featured Products */}
-      <section style={{ padding: '4rem 0' }}>
-        <div className="flex justify-between items-center" style={{ marginBottom: '2rem' }}>
-          <h2 style={{ fontSize: '2rem' }}>New Arrivals</h2>
-          <Link to="/products" style={{ color: 'var(--primary)', fontWeight: 500 }}>View All &rarr;</Link>
+    <div style={{ background: 'var(--bg-main)', minHeight: '100vh', paddingBottom: '4rem' }}>
+      <CategoryStrip />
+      
+      <div className="container" style={{ marginTop: '1rem' }}>
+        
+        {/* Massive Hero Banner Carousel Placeholder */}
+        <div style={{ width: '100%', height: '300px', background: 'url(https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=2000&auto=format&fit=crop) center/cover no-repeat', borderRadius: '8px', position: 'relative', overflow: 'hidden', marginBottom: '1.5rem', display: 'flex', alignItems: 'center' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(0,0,0,0.7), transparent)' }}></div>
+          <div style={{ position: 'relative', zIndex: 1, padding: '3rem', color: '#fff' }}>
+            <h2 style={{ fontSize: '3rem', fontWeight: 800, marginBottom: '0.5rem', color: '#fff' }}>The Big Festive Sale</h2>
+            <p style={{ fontSize: '1.25rem', marginBottom: '1.5rem' }}>Up to 80% Off on Electronics & Fashion</p>
+            <Link to="/products" className="btn" style={{ background: '#f59e0b', color: '#000', padding: '0.75rem 2rem', fontSize: '1.1rem' }}>Shop Now</Link>
+          </div>
         </div>
 
         {loading ? (
           <div className="flex justify-center" style={{ padding: '4rem 0' }}><div className="spinner"></div></div>
         ) : (
-          <div className="grid grid-cols-4 sm:grid-cols-2 gap-6">
-            {products.map(product => (
-              <ProductCard 
-                key={product._id} 
-                product={product} 
-                onAddToCart={handleAddToCart}
-              />
-            ))}
-          </div>
+          <>
+            {/* Amazon Style Promotional Dense Blocks */}
+            <div className="grid md:grid-cols-3 gap-4" style={{ marginBottom: '2rem' }}>
+              <div className="glass-panel" style={{ padding: '1rem' }}>
+                <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#111827' }}>Up to 70% off | Top Brands</h3>
+                <div className="promo-grid">
+                  {products.slice(0, 4).map(p => (
+                    <div key={p._id}>
+                      <img src={p.images[0] || 'https://via.placeholder.com/200'} alt={p.title} />
+                      <span style={{ display: 'block', fontSize: '0.75rem', marginTop: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.title}</span>
+                    </div>
+                  ))}
+                </div>
+                <Link to="/products" style={{ display: 'inline-block', marginTop: '1rem', fontSize: '0.85rem', color: 'var(--secondary-hover)' }}>See all deals</Link>
+              </div>
+
+              <div className="glass-panel" style={{ padding: '1rem' }}>
+                <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#111827' }}>Starting ₹149 | Latest Styles</h3>
+                <div className="promo-grid">
+                  {products.slice(4, 8).map(p => (
+                    <div key={p?._id || Math.random()}>
+                      <img src={p?.images?.[0] || 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=200&auto=format&fit=crop'} alt="Fashion" />
+                      <span style={{ display: 'block', fontSize: '0.75rem', marginTop: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p?.title || 'Clothing'}</span>
+                    </div>
+                  ))}
+                </div>
+                <Link to="/products" style={{ display: 'inline-block', marginTop: '1rem', fontSize: '0.85rem', color: 'var(--secondary-hover)' }}>Shop Fashion</Link>
+              </div>
+
+              <div className="glass-panel" style={{ padding: '1rem' }}>
+                <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#111827' }}>Min 50% Off | Appliances</h3>
+                <img src="https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=600&auto=format&fit=crop" alt="Home" style={{ width: '100%', height: 'auto', borderRadius: '4px', objectFit: 'cover' }} />
+                <Link to="/products?category=home" style={{ display: 'inline-block', marginTop: '1rem', fontSize: '0.85rem', color: 'var(--secondary-hover)' }}>Explore Home</Link>
+              </div>
+            </div>
+
+            {/* Horizontal Scroller Section */}
+            <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
+              <div className="flex justify-between items-center" style={{ marginBottom: '1.5rem' }}>
+                <h2 style={{ fontSize: '1.4rem' }}>Today's Deals</h2>
+                <Link to="/products" style={{ color: 'var(--secondary-hover)', fontWeight: 500, fontSize: '0.9rem' }}>See all deals</Link>
+              </div>
+              <div className="horizontal-scroll">
+                {products.map(product => (
+                  <div key={product._id} style={{ width: '220px', flexShrink: 0 }}>
+                    <ProductCard product={product} onAddToCart={handleAddToCart} />
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Standard Grid */}
+            <div className="glass-panel" style={{ padding: '1.5rem' }}>
+              <h2 style={{ fontSize: '1.4rem', marginBottom: '1.5rem' }}>More Items to Explore</h2>
+              <div className="grid grid-cols-5 gap-4">
+                {products.slice(0, 10).map(product => (
+                  <ProductCard key={product._id} product={product} onAddToCart={handleAddToCart} />
+                ))}
+              </div>
+            </div>
+          </>
         )}
-      </section>
+      </div>
     </div>
   );
 };
