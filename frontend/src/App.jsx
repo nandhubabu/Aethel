@@ -14,6 +14,9 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import VendorDashboard from './pages/VendorDashboard';
 import AddProduct from './pages/AddProduct';
+import Profile from './pages/Profile';
+import Orders from './pages/Orders';
+import Wishlist from './pages/Wishlist';
 
 const App = () => {
   return (
@@ -34,6 +37,9 @@ const App = () => {
               <Route path="/cart" element={<Cart />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/order-success" element={<OrderSuccess />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/orders" element={<Orders />} />
+              <Route path="/wishlist" element={<Wishlist />} />
             </Route>
 
             {/* Vendor Only Routes */}

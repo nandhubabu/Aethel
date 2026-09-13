@@ -107,7 +107,7 @@ const Navbar = () => {
 
       {/* Secondary Navbar */}
       <div style={{ background: '#232f3e', color: '#fff', padding: '0.4rem 0', fontSize: '0.9rem' }}>
-        <div className="container" style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+        <div className="container" style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', maxWidth: '100%', padding: '0 1.5rem' }}>
           <div className="flex items-center gap-1" style={{ fontWeight: 'bold', cursor: 'pointer' }}>
             <Menu size={20} /> All
           </div>

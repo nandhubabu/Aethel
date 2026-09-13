@@ -1,17 +1,42 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Star, ShoppingCart, Eye } from 'lucide-react';
+import { Star, ShoppingCart, Heart } from 'lucide-react';
 
 const ProductCard = ({ product, onAddToCart }) => {
   const { _id, title, price, images, vendor, averageRating, totalReviews, category } = product;
   const image = images && images.length > 0 ? images[0] : 'https://via.placeholder.com/400?text=No+Image';
   const navigate = useNavigate();
 
+  const handleAddToWishlist = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const saved = JSON.parse(localStorage.getItem('aethel_wishlist') || '[]');
+      if (!saved.find(item => item._id === product._id)) {
+        saved.push(product);
+        localStorage.setItem('aethel_wishlist', JSON.stringify(saved));
+        alert('Added to wishlist!');
+      } else {
+        alert('Already in wishlist!');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <div className="product-card">
-      <Link to={`/products/${_id}`} className="product-image-wrapper">
-        <img src={image} alt={title} className="product-image" loading="lazy" />
-      </Link>
+      <div style={{ position: 'relative' }}>
+        <Link to={`/products/${_id}`} className="product-image-wrapper" style={{ display: 'block', margin: 0 }}>
+          <img src={image} alt={title} className="product-image" loading="lazy" />
+        </Link>
+        <button 
+          onClick={handleAddToWishlist}
+          style={{ position: 'absolute', top: '8px', right: '8px', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '50%', padding: '0.4rem', cursor: 'pointer', zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
+        >
+          <Heart size={16} color="#9ca3af" />
+        </button>
+      </div>
       <div className="product-content">
         <Link to={`/products/${_id}`}>
           <h3 className="product-title" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
