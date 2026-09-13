@@ -83,11 +83,11 @@ const Orders = () => {
                       {order.items.map((item, idx) => (
                         <div key={idx} style={{ display: 'flex', gap: '1.5rem', marginBottom: idx !== order.items.length - 1 ? '1.5rem' : 0 }}>
                           <div style={{ width: '90px', height: '90px', background: '#f3f4f6', borderRadius: '6px', overflow: 'hidden', flexShrink: 0 }}>
-                            <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=200&auto=format&fit=crop" alt="Product" style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#fff' }} />
+                            <img src={item.product?.images?.[0] || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=200&auto=format&fit=crop"} alt={item.product?.title || item.title || "Product"} style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#fff' }} />
                           </div>
                           <div style={{ flexGrow: 1 }}>
-                            <Link to={`/products`} style={{ fontWeight: '600', fontSize: '1.05rem', marginBottom: '0.25rem', display: 'inline-block' }}>
-                              {item.productTitle || 'Product Name Unavailable'}
+                            <Link to={`/products/${item.product?._id || ''}`} style={{ fontWeight: '600', fontSize: '1.05rem', marginBottom: '0.25rem', display: 'inline-block' }}>
+                              {item.product?.title || item.title || 'Product Name Unavailable'}
                             </Link>
                             <div style={{ color: '#4b5563', fontSize: '0.95rem', marginBottom: '0.5rem' }}>Return eligible through 30 days</div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>

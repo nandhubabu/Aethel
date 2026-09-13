@@ -178,7 +178,7 @@ async function getMyOrders(req, res, next) {
     if (req.query.status) filter.paymentStatus = req.query.status;
 
     const [orders, total] = await Promise.all([
-      Order.find(filter).skip(skip).limit(limit).sort({ createdAt: -1 }).lean(),
+      Order.find(filter).populate('items.product').skip(skip).limit(limit).sort({ createdAt: -1 }).lean(),
       Order.countDocuments(filter),
     ]);
 
@@ -224,7 +224,7 @@ async function getVendorSales(req, res, next) {
     const filter = { 'items.vendor': req.user.id, paymentStatus: 'paid' };
 
     const [orders, total] = await Promise.all([
-      Order.find(filter).skip(skip).limit(limit).sort({ createdAt: -1 }).lean(),
+      Order.find(filter).populate('items.product').skip(skip).limit(limit).sort({ createdAt: -1 }).lean(),
       Order.countDocuments(filter),
     ]);
 
