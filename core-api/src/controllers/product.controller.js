@@ -204,4 +204,59 @@ async function getVendorProducts(req, res, next) {
   }
 }
 
-module.exports = { getProducts, getProduct, createProduct, updateProduct, deleteProduct, addReview, getVendorProducts };
+async function seedData(req, res, next) {
+  try {
+    const count = await Product.countDocuments();
+    if (count > 20) {
+      return res.json({ success: false, message: 'Database already has data. Skipping seed.' });
+    }
+
+    const User = require('../models/User');
+    let vendor = await User.findOne({ role: 'vendor' });
+    if (!vendor) {
+      vendor = await User.create({
+        name: 'Aethel Official Vendor',
+        email: 'vendor@aethel.com',
+        password: 'password123',
+        role: 'vendor',
+        vendorProfile: { storeName: 'Aethel Mega Store', description: 'Official Aethel seed data' }
+      });
+    }
+
+    const sampleProducts = [
+      { title: "QuantumX Pro 15-inch Laptop", description: "Ultra-fast processor, 16GB RAM, 512GB SSD.", price: 89999, category: "electronics", images: ["https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&q=80"], stock: 45 },
+      { title: "Aura 4K OLED Smart TV", description: "Immersive viewing experience with deep blacks.", price: 54999, category: "electronics", images: ["https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&q=80"], stock: 20 },
+      { title: "Noise-Cancelling Headphones", description: "Over-ear bluetooth headphones with ANC.", price: 12999, category: "electronics", images: ["https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80"], stock: 120 },
+      { title: "Smartwatch Series 8", description: "Track your heart rate, sleep, and workouts.", price: 18500, category: "electronics", images: ["https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=800&q=80"], stock: 75 },
+      { title: "Ergonomic Wireless Mouse", description: "Adjustable DPI settings.", price: 1999, category: "electronics", images: ["https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=800&q=80"], stock: 200 },
+      { title: "Mechanical Gaming Keyboard", description: "Customizable RGB lighting.", price: 4500, category: "electronics", images: ["https://images.unsplash.com/photo-1595225476474-87563907a212?w=800&q=80"], stock: 80 },
+      { title: "Classic White T-Shirt", description: "100% pure premium cotton.", price: 799, category: "clothing", images: ["https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80"], stock: 300 },
+      { title: "Men's Slim Fit Denim Jeans", description: "Stretchable blue denim.", price: 1899, category: "clothing", images: ["https://images.unsplash.com/photo-1542272604-787c3835535d?w=800&q=80"], stock: 150 },
+      { title: "Women's Floral Summer Dress", description: "Lightweight floral print.", price: 2199, category: "clothing", images: ["https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=800&q=80"], stock: 85 },
+      { title: "Athletic Running Shoes", description: "Lightweight mesh upper.", price: 3499, category: "clothing", images: ["https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&q=80"], stock: 110 },
+      { title: "Ceramic Coffee Mug Set", description: "Set of 4 matte finish mugs.", price: 899, category: "home", images: ["https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=800&q=80"], stock: 200 },
+      { title: "Ergonomic Office Chair", description: "Breathable mesh back.", price: 8500, category: "home", images: ["https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?w=800&q=80"], stock: 45 },
+      { title: "Minimalist Table Lamp", description: "Warm LED light, touch control.", price: 1599, category: "home", images: ["https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=800&q=80"], stock: 90 },
+      { title: "Remote Control Racing Car", description: "High-speed off-road RC car.", price: 2499, category: "toys", images: ["https://images.unsplash.com/photo-1594787318286-3d835c1d207f?w=800&q=80"], stock: 60 },
+      { title: "Non-Slip Yoga Mat", description: "Eco-friendly TPE material.", price: 1199, category: "sports", images: ["https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=800&q=80"], stock: 180 }
+    ];
+
+    const productsToInsert = sampleProducts.map(p => ({ ...p, vendor: vendor._id }));
+    await Product.insertMany(productsToInsert);
+
+    res.json({ success: true, message: `Seeded ${productsToInsert.length} products successfully!` });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = {
+  getProducts,
+  getProduct,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  addReview,
+  getVendorProducts,
+  seedData,
+};
