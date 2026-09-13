@@ -1,8 +1,14 @@
 import axios from 'axios';
 
 // Create an Axios instance configured for the API Gateway (Nginx)
+let baseURL = import.meta.env.VITE_API_URL || '/api/v1';
+if (baseURL.startsWith('http') && !baseURL.endsWith('/api/v1')) {
+  baseURL = baseURL.replace(/\/$/, '') + '/api/v1';
+}
+
+// Create an Axios instance configured for the API Gateway
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api/v1',
+  baseURL,
   headers: {
     'Content-Type': 'application/json',
   },
