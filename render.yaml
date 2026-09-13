@@ -1,0 +1,40 @@
+services:
+  - type: web
+    name: aethel-core-api
+    env: node
+    rootDir: core-api
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 5000
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: PAYMENT_API_URL
+        value: https://aethel-payment-api.onrender.com/api/v1/payment
+      - key: INTERNAL_API_SECRET
+        sync: false
+
+  - type: web
+    name: aethel-payment-api
+    env: node
+    rootDir: payment-api
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 5001
+      - key: MONGO_URI
+        sync: false
+      - key: CORE_API_URL
+        value: https://aethel-core-api.onrender.com/internal
+      - key: INTERNAL_API_SECRET
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
