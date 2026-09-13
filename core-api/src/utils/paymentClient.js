@@ -4,8 +4,8 @@ const { env } = require('../config/env');
 const logger = require('./logger');
 
 const PAYMENT_BASE = env.paymentServiceUrl;
-const MAX_RETRIES = 3;
-const INITIAL_BACKOFF_MS = 500;
+const MAX_RETRIES = 5;
+const INITIAL_BACKOFF_MS = 2000;
 
 /**
  * Lightweight HTTP client for internal service-to-service communication.
@@ -17,7 +17,7 @@ let circuitOpen = false;
 let circuitOpenedAt = 0;
 const CIRCUIT_RESET_MS = 30000; // 30 seconds
 let consecutiveFailures = 0;
-const FAILURE_THRESHOLD = 5;
+const FAILURE_THRESHOLD = 10;
 
 function checkCircuit() {
   if (!circuitOpen) return true;
