@@ -68,7 +68,7 @@ const Checkout = () => {
             razorpay_signature: response.razorpay_signature,
             orderId,
           });
-          navigate(`/order-success?orderId=${orderId}`);
+          navigate(`/orders?payment_success=true`);
         } catch (err) {
           setError('Payment was captured but verification failed. Contact support.');
           setPaying(false);

@@ -36,7 +36,6 @@ const ProductDetail = () => {
     try {
       await apiClient.post('/cart/items', { productId: product._id, quantity });
       setAddedToCart(true);
-      setTimeout(() => setAddedToCart(false), 2000);
     } catch (err) {
       alert(err.message || 'Please login to add items to cart');
     } finally {
@@ -202,9 +201,15 @@ const ProductDetail = () => {
 
             {/* Action Buttons */}
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
-              <button onClick={handleAddToCart} disabled={product.stock === 0 || addingToCart} style={{ flex: 1, padding: '1rem', borderRadius: '12px', fontSize: '1rem', fontWeight: '600', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', border: '2px solid var(--secondary)', background: addedToCart ? '#ecfdf5' : 'transparent', color: addedToCart ? '#059669' : 'var(--secondary)', cursor: product.stock === 0 ? 'not-allowed' : 'pointer', opacity: product.stock === 0 ? 0.5 : 1, transition: 'all 0.3s ease' }}>
+              <button onClick={() => {
+                if (addedToCart) {
+                  navigate('/cart');
+                } else {
+                  handleAddToCart();
+                }
+              }} disabled={product.stock === 0 || addingToCart} style={{ flex: 1, padding: '1rem', borderRadius: '12px', fontSize: '1rem', fontWeight: '600', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', border: '2px solid var(--secondary)', background: addedToCart ? '#ecfdf5' : 'transparent', color: addedToCart ? '#059669' : 'var(--secondary)', cursor: product.stock === 0 ? 'not-allowed' : 'pointer', opacity: product.stock === 0 ? 0.5 : 1, transition: 'all 0.3s ease' }}>
                 <ShoppingCart size={20} />
-                {addedToCart ? 'Added ✓' : addingToCart ? 'Adding...' : 'Add to Cart'}
+                {addedToCart ? 'Go to Cart' : addingToCart ? 'Adding...' : 'Add to Cart'}
               </button>
               <button onClick={handleBuyNow} disabled={product.stock === 0} style={{ flex: 1, padding: '1rem', borderRadius: '12px', fontSize: '1rem', fontWeight: '600', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', border: 'none', background: product.stock === 0 ? '#d1d5db' : 'linear-gradient(135deg, #cca352, #b58f40)', color: '#fff', cursor: product.stock === 0 ? 'not-allowed' : 'pointer', transition: 'all 0.3s ease', boxShadow: product.stock > 0 ? '0 4px 14px rgba(204, 163, 82, 0.35)' : 'none' }}>
                 <Zap size={20} />

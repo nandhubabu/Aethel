@@ -63,7 +63,6 @@ const Home = () => {
   const handleAddToCart = async (product) => {
     try {
       await apiClient.post('/cart/items', { productId: product._id, quantity: 1 });
-      alert('Added to cart!');
     } catch (err) {
       alert(err.message || 'Error adding to cart');
     }

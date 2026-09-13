@@ -28,7 +28,6 @@ const Wishlist = () => {
   const handleAddToCart = async (product) => {
     try {
       await apiClient.post('/cart/items', { productId: product._id, quantity: 1 });
-      alert('Added to cart!');
       removeFromWishlist(product._id);
     } catch (err) {
       alert(err.message || 'Error adding to cart');

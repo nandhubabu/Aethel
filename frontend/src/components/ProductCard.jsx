@@ -24,6 +24,27 @@ const ProductCard = ({ product, onAddToCart }) => {
     }
   };
 
+  const [addedToCart, setAddedToCart] = React.useState(false);
+  const [addingToCart, setAddingToCart] = React.useState(false);
+
+  const handleAddToCartClick = async () => {
+    if (addedToCart) {
+      navigate('/cart');
+      return;
+    }
+    if (onAddToCart) {
+      setAddingToCart(true);
+      try {
+        await onAddToCart(product);
+        setAddedToCart(true);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setAddingToCart(false);
+      }
+    }
+  };
+
   return (
     <div className="product-card">
       <div style={{ position: 'relative' }}>
@@ -70,11 +91,12 @@ const ProductCard = ({ product, onAddToCart }) => {
             Quick View
           </button>
           <button 
-            onClick={() => onAddToCart && onAddToCart(product)}
+            onClick={handleAddToCartClick}
+            disabled={addingToCart}
             className="btn btn-primary flex-1"
-            style={{ padding: '0.4rem', fontSize: '0.8rem' }}
+            style={{ padding: '0.4rem', fontSize: '0.8rem', background: addedToCart ? '#10b981' : undefined }}
           >
-            Add to Cart
+            {addedToCart ? 'Go to Cart' : addingToCart ? 'Adding...' : 'Add to Cart'}
           </button>
         </div>
       </div>

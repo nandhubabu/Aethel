@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../api/client';
 import { Package, Clock, CheckCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import UserSidebar from '../components/UserSidebar';
 
 const Orders = () => {
@@ -23,6 +23,10 @@ const Orders = () => {
     fetchOrders();
   }, []);
 
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const paymentSuccess = queryParams.get('payment_success');
+
   if (loading) return <div className="container" style={{ padding: '4rem 0', textAlign: 'center' }}><div className="spinner"></div></div>;
 
   return (
@@ -37,6 +41,13 @@ const Orders = () => {
 
           {/* Main Content */}
           <div>
+            {paymentSuccess && (
+              <div style={{ background: '#ecfdf5', color: '#065f46', border: '1px solid #10b981', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <CheckCircle size={20} />
+                <span style={{ fontWeight: '500' }}>Payment Successful! Your order has been placed.</span>
+              </div>
+            )}
+            
             <h1 style={{ fontSize: '1.8rem', marginBottom: '1.5rem', color: '#111827' }}>Your Orders</h1>
             
             {error && <div className="alert alert-error">{error}</div>}
