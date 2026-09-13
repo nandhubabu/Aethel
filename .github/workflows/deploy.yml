@@ -7,8 +7,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  # github.repository returns username/repo (e.g. nandhubabu/Aethel)
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build-and-push:
@@ -24,6 +22,9 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Set lowercase repository name for Docker
+        run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
 
       - name: Log in to the Container registry
         uses: docker/login-action@v3
