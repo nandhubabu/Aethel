@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../api/client';
 import ProductCard from '../components/ProductCard';
-import CategoryStrip from '../components/CategoryStrip';
 import { Link } from 'react-router-dom';
 
 const Home = () => {
@@ -11,7 +10,7 @@ const Home = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await apiClient.get('/products?limit=12&sort=newest');
+        const res = await apiClient.get('/products?limit=24&sort=newest');
         setProducts(res.data);
       } catch (error) {
         console.error('Failed to fetch products', error);
@@ -31,11 +30,20 @@ const Home = () => {
     }
   };
 
+  // Helper function to extract specific categories
+  const getCategoryProducts = (categoryName, count = 4) => {
+    return products.filter(p => p.category === categoryName).slice(0, count);
+  };
+
+  const electronics = getCategoryProducts('electronics');
+  const clothing = getCategoryProducts('clothing');
+  const home = getCategoryProducts('home');
+  const toys = getCategoryProducts('toys');
+
   return (
     <div style={{ background: 'var(--bg-main)', minHeight: '100vh', paddingBottom: '4rem' }}>
-      <CategoryStrip />
       
-      <div className="container" style={{ marginTop: '1rem' }}>
+      <div className="container" style={{ marginTop: '1.5rem' }}>
         
         {/* Massive Hero Banner Carousel Placeholder */}
         <div style={{ width: '100%', height: '300px', background: 'url(https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=2000&auto=format&fit=crop) center/cover no-repeat', borderRadius: '8px', position: 'relative', overflow: 'hidden', marginBottom: '1.5rem', display: 'flex', alignItems: 'center' }}>
@@ -53,45 +61,53 @@ const Home = () => {
           <>
             {/* Amazon Style Promotional Dense Blocks */}
             <div className="grid grid-cols-4 gap-4" style={{ marginBottom: '2rem' }}>
+              
               <div className="glass-panel" style={{ padding: '1rem' }}>
-                <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#111827' }}>Up to 70% off | Top Brands</h3>
+                <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#111827' }}>Electronics | Top Brands</h3>
                 <div className="promo-grid">
-                  {products.slice(0, 4).map(p => (
+                  {electronics.map(p => (
                     <div key={p._id}>
                       <img src={p.images[0] || 'https://via.placeholder.com/200'} alt={p.title} />
                       <span style={{ display: 'block', fontSize: '0.75rem', marginTop: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.title}</span>
                     </div>
                   ))}
                 </div>
-                <Link to="/products" style={{ display: 'inline-block', marginTop: '1rem', fontSize: '0.85rem', color: 'var(--secondary-hover)' }}>See all deals</Link>
+                <Link to="/products?category=electronics" style={{ display: 'inline-block', marginTop: '1rem', fontSize: '0.85rem', color: 'var(--secondary-hover)' }}>See all deals</Link>
               </div>
 
               <div className="glass-panel" style={{ padding: '1rem' }}>
                 <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#111827' }}>Starting ₹149 | Latest Styles</h3>
                 <div className="promo-grid">
-                  {products.slice(4, 8).map(p => (
-                    <div key={p?._id || Math.random()}>
-                      <img src={p?.images?.[0] || 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=200&auto=format&fit=crop'} alt="Fashion" />
-                      <span style={{ display: 'block', fontSize: '0.75rem', marginTop: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p?.title || 'Clothing'}</span>
+                  {clothing.map(p => (
+                    <div key={p._id}>
+                      <img src={p.images[0] || 'https://via.placeholder.com/200'} alt={p.title} />
+                      <span style={{ display: 'block', fontSize: '0.75rem', marginTop: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.title}</span>
                     </div>
                   ))}
                 </div>
-                <Link to="/products" style={{ display: 'inline-block', marginTop: '1rem', fontSize: '0.85rem', color: 'var(--secondary-hover)' }}>Shop Fashion</Link>
+                <Link to="/products?category=clothing" style={{ display: 'inline-block', marginTop: '1rem', fontSize: '0.85rem', color: 'var(--secondary-hover)' }}>Shop Fashion</Link>
               </div>
 
               <div className="glass-panel" style={{ padding: '1rem' }}>
                 <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#111827' }}>Min 50% Off | Appliances</h3>
-                <img src="https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=600&auto=format&fit=crop" alt="Home" style={{ width: '100%', height: 'auto', borderRadius: '4px', objectFit: 'cover' }} />
+                <div className="promo-grid">
+                  {home.map(p => (
+                    <div key={p._id}>
+                      <img src={p.images[0] || 'https://via.placeholder.com/200'} alt={p.title} />
+                      <span style={{ display: 'block', fontSize: '0.75rem', marginTop: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.title}</span>
+                    </div>
+                  ))}
+                </div>
                 <Link to="/products?category=home" style={{ display: 'inline-block', marginTop: '1rem', fontSize: '0.85rem', color: 'var(--secondary-hover)' }}>Explore Home</Link>
               </div>
 
               <div className="glass-panel" style={{ padding: '1rem' }}>
                 <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#111827' }}>New Arrivals | Toys & Games</h3>
                 <div className="promo-grid">
-                  {products.slice(0, 4).map(p => (
-                    <div key={p?._id || Math.random()}>
-                      <img src={'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=200&auto=format&fit=crop'} alt="Toys" />
-                      <span style={{ display: 'block', fontSize: '0.75rem', marginTop: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Toys & Games</span>
+                  {toys.map(p => (
+                    <div key={p._id}>
+                      <img src={p.images[0] || 'https://via.placeholder.com/200'} alt={p.title} />
+                      <span style={{ display: 'block', fontSize: '0.75rem', marginTop: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.title}</span>
                     </div>
                   ))}
                 </div>
