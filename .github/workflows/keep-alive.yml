@@ -3,7 +3,7 @@ name: Keep Render Services Alive
 on:
   schedule:
     # Runs every 14 minutes to prevent Render free tier from sleeping
-    - cron: '*/14 * * * *'
+    - cron: '*/12 * * * *'
   workflow_dispatch: # Allows manual triggering from GitHub UI
 
 jobs:
