@@ -65,20 +65,7 @@ const Products = () => {
   const displayCategory = activeCategory === 'All' ? 'All Products' : activeCategory.charAt(0).toUpperCase() + activeCategory.slice(1);
 
   return (
-    <div style={{ background: 'var(--bg-main)', minHeight: '100vh', paddingBottom: '4rem' }}>
-      
-      {/* Dynamic Header */}
-      <div style={{ background: 'linear-gradient(135deg, var(--primary) 0%, #0d1e36 100%)', color: '#fff', padding: '3rem 0', marginBottom: '2rem' }}>
-        <div className="container" style={{ maxWidth: '1400px' }}>
-          <h1 style={{ fontSize: '2.5rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-            {activeCategory === 'All' ? <Grid size={32} /> : <Sparkles size={32} color="var(--secondary)" />}
-            {displayCategory}
-          </h1>
-          <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '1.1rem', maxWidth: '600px' }}>
-            Explore the best {activeCategory === 'All' ? 'items' : activeCategory} handpicked for you. Quality guaranteed.
-          </p>
-        </div>
-      </div>
+    <div style={{ background: 'var(--bg-main)', minHeight: '100vh', paddingBottom: '4rem', paddingTop: '2rem' }}>
 
       <div className="container" style={{ maxWidth: '1400px' }}>
         
