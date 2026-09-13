@@ -54,26 +54,40 @@ const Navbar = () => {
           <div className="nav-links" style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', color: '#fff' }}>
             {user ? (
               <>
-                <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem', cursor: 'pointer' }}>
-                  <span style={{ color: '#d1d5db' }}>Hello, {user.name}</span>
-                  <span style={{ fontWeight: 'bold' }}>Account & Lists</span>
+                <div className="dropdown" style={{ paddingTop: '10px', paddingBottom: '10px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem', cursor: 'pointer' }}>
+                    <span style={{ color: '#d1d5db' }}>Hello, {user.name}</span>
+                    <span style={{ fontWeight: 'bold' }}>Account & Lists</span>
+                  </div>
+                  <div className="dropdown-content">
+                    <div style={{ padding: '8px 16px', fontWeight: 'bold', fontSize: '0.95rem' }}>Your Account</div>
+                    <Link to="/profile">Your Profile</Link>
+                    <Link to="/orders">Your Orders</Link>
+                    <Link to="/wishlist">Your Wishlist</Link>
+                    {user.role === 'vendor' && (
+                      <>
+                        <hr />
+                        <div style={{ padding: '8px 16px', fontWeight: 'bold', fontSize: '0.95rem' }}>Seller Hub</div>
+                        <Link to="/vendor/dashboard">Vendor Dashboard</Link>
+                        <Link to="/vendor/products/new">Add Product</Link>
+                      </>
+                    )}
+                    <hr />
+                    <button onClick={handleLogout} style={{ color: '#dc2626', fontWeight: '500' }}>
+                      Sign Out
+                    </button>
+                  </div>
                 </div>
+
+                <Link to="/orders" className="flex items-center gap-1" style={{ color: '#fff', fontSize: '0.9rem', flexDirection: 'column', alignItems: 'flex-start' }}>
+                  <span style={{ color: '#d1d5db', fontSize: '0.8rem' }}>Returns</span>
+                  <span style={{ fontWeight: 'bold' }}>& Orders</span>
+                </Link>
 
                 <Link to="/cart" className="flex items-center gap-1" style={{ color: '#fff', fontWeight: 'bold', fontSize: '1.1rem' }}>
                   <ShoppingCart size={28} />
                   <span>Cart</span>
                 </Link>
-
-                {user.role === 'vendor' && (
-                  <Link to="/vendor/dashboard" className="flex items-center gap-1" style={{ color: '#fff', fontWeight: 'bold' }}>
-                    <Package size={20} />
-                    <span>Dashboard</span>
-                  </Link>
-                )}
-
-                <button onClick={handleLogout} style={{ background: 'none', color: '#d1d5db', cursor: 'pointer' }}>
-                  <LogOut size={20} />
-                </button>
               </>
             ) : (
               <>
