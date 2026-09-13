@@ -14,7 +14,7 @@ const banners = [
     buttonText: 'Shop Now'
   },
   {
-    image: 'https://images.unsplash.com/photo-1555529733-0e670560f4e1?q=80&w=2000&auto=format&fit=crop',
+    image: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=2000&auto=format&fit=crop',
     title: 'Upgrade Your Workspace',
     subtitle: 'Premium Furniture & Ergonomic Chairs',
     link: '/products?category=home',
