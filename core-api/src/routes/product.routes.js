@@ -21,14 +21,15 @@ const createProductSchema = z.object({
 });
 
 // Public routes
+// Public and specific routes
 router.get('/', getProducts);
+router.get('/vendor/my-products', authenticate, authorize('vendor', 'admin'), getVendorProducts);
 router.get('/:id', getProduct);
 
 // Authenticated routes
 router.use(authenticate);
 
 // Vendor routes
-router.get('/vendor/my-products', authorize('vendor', 'admin'), getVendorProducts);
 router.post('/', authorize('vendor', 'admin'), validateRequest(createProductSchema), createProduct);
 router.put('/:id', authorize('vendor', 'admin'), updateProduct);
 router.delete('/:id', authorize('vendor', 'admin'), deleteProduct);

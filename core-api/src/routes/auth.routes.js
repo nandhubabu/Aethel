@@ -12,7 +12,7 @@ const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8).max(128),
   role: z.enum(['customer', 'vendor']).optional().default('customer'),
-  storeName: z.string().min(1).max(100).optional(),
+  storeName: z.string().max(100).optional(),
   storeDescription: z.string().max(500).optional(),
 });
 

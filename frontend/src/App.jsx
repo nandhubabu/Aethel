@@ -13,6 +13,7 @@ import OrderSuccess from './pages/OrderSuccess';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import VendorDashboard from './pages/VendorDashboard';
+import AddProduct from './pages/AddProduct';
 
 const App = () => {
   return (
@@ -38,6 +39,7 @@ const App = () => {
             {/* Vendor Only Routes */}
             <Route element={<ProtectedRoute allowedRoles={['vendor', 'admin']} />}>
               <Route path="/vendor/dashboard" element={<VendorDashboard />} />
+              <Route path="/vendor/products/new" element={<AddProduct />} />
             </Route>
           </Routes>
         </main>
