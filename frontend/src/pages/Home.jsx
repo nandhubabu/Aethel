@@ -3,10 +3,36 @@ import apiClient from '../api/client';
 import ProductCard from '../components/ProductCard';
 import CategoryStrip from '../components/CategoryStrip';
 import { Link } from 'react-router-dom';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
+const banners = [
+  {
+    image: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=2000&auto=format&fit=crop',
+    title: 'The Big Festive Sale',
+    subtitle: 'Up to 80% Off on Electronics & Fashion',
+    link: '/products?category=electronics',
+    buttonText: 'Shop Now'
+  },
+  {
+    image: 'https://images.unsplash.com/photo-1555529733-0e670560f4e1?q=80&w=2000&auto=format&fit=crop',
+    title: 'Upgrade Your Workspace',
+    subtitle: 'Premium Furniture & Ergonomic Chairs',
+    link: '/products?category=home',
+    buttonText: 'Explore Home'
+  },
+  {
+    image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=2000&auto=format&fit=crop',
+    title: 'Level Up Your Game',
+    subtitle: 'Top tier Sports Gear & Footwear',
+    link: '/products?category=sports',
+    buttonText: 'View Collection'
+  }
+];
 
 const Home = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -21,6 +47,18 @@ const Home = () => {
     };
     fetchProducts();
   }, []);
+
+  // Auto-rotate slides
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev === banners.length - 1 ? 0 : prev + 1));
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const nextSlide = () => setCurrentSlide(prev => (prev === banners.length - 1 ? 0 : prev + 1));
+  const prevSlide = () => setCurrentSlide(prev => (prev === 0 ? banners.length - 1 : prev - 1));
+  const goToSlide = (index) => setCurrentSlide(index);
 
   const handleAddToCart = async (product) => {
     try {
@@ -48,13 +86,49 @@ const Home = () => {
 
       <div className="container" style={{ marginTop: '1.5rem' }}>
         
-        {/* Massive Hero Banner Carousel Placeholder */}
-        <div style={{ width: '100%', height: '300px', background: 'url(https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=2000&auto=format&fit=crop) center/cover no-repeat', borderRadius: '8px', position: 'relative', overflow: 'hidden', marginBottom: '1.5rem', display: 'flex', alignItems: 'center' }}>
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(0,0,0,0.7), transparent)' }}></div>
-          <div style={{ position: 'relative', zIndex: 1, padding: '3rem', color: '#fff' }}>
-            <h2 style={{ fontSize: '3rem', fontWeight: 800, marginBottom: '0.5rem', color: '#fff' }}>The Big Festive Sale</h2>
-            <p style={{ fontSize: '1.25rem', marginBottom: '1.5rem' }}>Up to 80% Off on Electronics & Fashion</p>
-            <Link to="/products" className="btn" style={{ background: '#f59e0b', color: '#000', padding: '0.75rem 2rem', fontSize: '1.1rem' }}>Shop Now</Link>
+        {/* Interactive Hero Carousel */}
+        <div style={{ 
+          width: '100%', height: '350px', 
+          background: `url(${banners[currentSlide].image}) center/cover no-repeat`, 
+          borderRadius: '12px', position: 'relative', overflow: 'hidden', 
+          marginBottom: '2rem', display: 'flex', alignItems: 'center',
+          transition: 'background 0.5s ease-in-out'
+        }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(0,0,0,0.8), rgba(0,0,0,0.2))' }}></div>
+          
+          {/* Navigation Arrows */}
+          <button onClick={prevSlide} style={{ position: 'absolute', left: '1rem', zIndex: 2, background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', padding: '0.5rem', color: '#fff', cursor: 'pointer', backdropFilter: 'blur(4px)' }}>
+            <ChevronLeft size={32} />
+          </button>
+          <button onClick={nextSlide} style={{ position: 'absolute', right: '1rem', zIndex: 2, background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', padding: '0.5rem', color: '#fff', cursor: 'pointer', backdropFilter: 'blur(4px)' }}>
+            <ChevronRight size={32} />
+          </button>
+
+          <div style={{ position: 'relative', zIndex: 1, padding: '4rem', color: '#fff', maxWidth: '600px' }}>
+            <h2 style={{ fontSize: '3.5rem', fontWeight: 800, marginBottom: '0.75rem', color: '#fff', lineHeight: 1.1 }}>{banners[currentSlide].title}</h2>
+            <p style={{ fontSize: '1.25rem', marginBottom: '2rem', opacity: 0.9 }}>{banners[currentSlide].subtitle}</p>
+            <Link to={banners[currentSlide].link} className="btn" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: '#fff', padding: '0.75rem 2.5rem', fontSize: '1.1rem', borderRadius: '50px', border: 'none', boxShadow: '0 4px 14px rgba(245, 158, 11, 0.4)' }}>
+              {banners[currentSlide].buttonText}
+            </Link>
+          </div>
+
+          {/* Dots */}
+          <div style={{ position: 'absolute', bottom: '1rem', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '0.5rem', zIndex: 2 }}>
+            {banners.map((_, idx) => (
+              <button 
+                key={idx} 
+                onClick={() => goToSlide(idx)}
+                style={{ 
+                  width: idx === currentSlide ? '24px' : '8px', 
+                  height: '8px', 
+                  borderRadius: '4px', 
+                  background: idx === currentSlide ? '#f59e0b' : 'rgba(255,255,255,0.5)', 
+                  border: 'none', 
+                  cursor: 'pointer',
+                  transition: 'all 0.3s'
+                }} 
+              />
+            ))}
           </div>
         </div>
 
