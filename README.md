@@ -1,55 +1,124 @@
-# Aethel — Multi-Vendor E-Commerce Microservices
+# Aethel 🛍️
 
-A production-ready, containerized MERN-stack marketplace featuring a three-container microservices architecture, full Stripe payment integration, and CI/CD pipelines targeting free-tier hosting (Render).
+> A premium, highly scalable, and futuristic E-Commerce platform built with a microservices architecture.
 
-## Architecture
+![Aethel Cover Image](https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=2000&auto=format&fit=crop) *(Placeholder for Cover Image)*
 
-1. **Frontend (`/frontend`)**: React 18 SPA built with Vite. Served by Nginx, which also acts as an API Gateway reverse-proxying requests to the backend services. Premium dark-mode UI built with Vanilla CSS.
-2. **Core API (`/core-api`)**: Node.js/Express monolith handling Users, Auth, Products, and Cart. Connects to MongoDB Atlas.
-3. **Payment API (`/payment-api`)**: Dedicated Node.js microservice handling Stripe PaymentIntents, webhook processing, idempotency, and the transaction ledger.
+## 🚀 Project Overview
 
-## Quick Start (Local Development)
+**Aethel** is a modern e-commerce application designed to deliver a flawless, high-end shopping experience. The platform abandons generic templates in favor of a custom-built, futuristic design system. Under the hood, it leverages a robust **Microservices Architecture**, separating core functionalities from payment processing to ensure maximum scalability, security, and fault tolerance.
 
-### 1. Prerequisites
-- Docker & Docker Compose installed
-- MongoDB Atlas cluster (M0 Free tier is sufficient for dev)
-- Stripe account (Test Mode)
+### 🌐 Live Demos
+- **Frontend App:** [https://aethel-five-rouge.vercel.app/](https://aethel-five-rouge.vercel.app/)
+- **Core API (Backend):** Hosted on Render
+- **Payment API (Backend):** Hosted on Render
 
-### 2. Environment Variables
-Copy `.env.example` to `.env` in the root directory and fill in your keys:
+---
+
+## ✨ Key Features
+
+### User Experience (UI/UX)
+- **Custom Design System:** Premium, glassmorphism-inspired UI with smooth transitions and gold gradient accents.
+- **Dynamic Product Detail Page:** Immersive 2-column layout with sticky galleries, interactive quantities, and instant "Add to Cart" feedback.
+- **Fully Responsive:** Perfectly optimized across mobile, tablet, and desktop environments.
+- **Wishlist & Cart Management:** Seamlessly save items and manage checkout flows.
+
+### Technical & Backend
+- **Microservices Architecture:** 
+  - `core-api`: Handles Users, Products, Carts, and Orders.
+  - `payment-api`: Dedicated service for secure transaction handling.
+- **Razorpay Integration:** Full payment gateway integration with secure webhook verification and HMAC hashing.
+- **Automated Infrastructure Management:** Includes custom GitHub Actions (Cron Jobs) to maintain instance health and prevent cold starts on cloud providers.
+- **JWT Authentication:** Secure stateless authentication and authorization (Customer vs. Vendor roles).
+
+---
+
+## 🏗 Architecture & Tech Stack
+
+### Frontend
+- **Framework:** React.js (Vite)
+- **Styling:** Custom CSS with CSS Variables (No generic UI libraries)
+- **Routing:** React Router v6
+- **Icons:** Lucide React
+
+### Backend (Node.js ecosystem)
+- **Framework:** Express.js
+- **Database:** MongoDB (Mongoose ORM)
+- **Authentication:** JSON Web Tokens (JWT) & bcryptjs
+- **Payment Gateway:** Razorpay SDK
+
+### DevOps & Deployment
+- **Frontend Hosting:** Vercel
+- **Backend Hosting:** Render
+- **CI/CD & Automation:** GitHub Actions
+
+---
+
+## ⚙️ Local Setup & Installation
+
+To run this project locally, you will need to start the frontend and both backend services.
+
+### Prerequisites
+- Node.js (v18+)
+- MongoDB (Local or Atlas)
+- Razorpay Test Credentials
+
+### 1. Clone the repository
 ```bash
-cp .env.example .env
+git clone https://github.com/nandhubabu/Aethel.git
+cd Aethel
 ```
-Ensure you provide real `MONGO_URI`, `JWT_SECRET`, `SERVICE_SECRET`, and your Stripe keys.
 
-### 3. Run with Docker Compose
+### 2. Set up the Core API
 ```bash
-docker-compose up --build
+cd core-api
+npm install
 ```
-This will start:
-- Frontend & Nginx on `http://localhost:80`
-- Core API on `http://localhost:5000`
-- Payment API on `http://localhost:5001`
+Create a `.env` file in `core-api/`:
+```env
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+SERVICE_SECRET=your_service_secret
+PAYMENT_SERVICE_URL=http://localhost:5001
+```
+Run the service: `npm run dev`
 
-### 4. Stripe Webhooks (Local testing)
-To test webhooks locally, use the Stripe CLI to forward events to the Payment API:
+### 3. Set up the Payment API
 ```bash
-stripe listen --forward-to localhost:5001/api/v1/payments/webhooks/stripe
+cd ../payment-api
+npm install
 ```
-Update your `.env` with the webhook secret output by the command above.
+Create a `.env` file in `payment-api/`:
+```env
+PORT=5001
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+SERVICE_SECRET=your_service_secret
+CORE_SERVICE_URL=http://localhost:5000
+RAZORPAY_KEY_ID=your_razorpay_key
+RAZORPAY_KEY_SECRET=your_razorpay_secret
+```
+Run the service: `npm run dev`
 
-## CI/CD & Deployment
+### 4. Set up the Frontend
+```bash
+cd ../frontend
+npm install
+```
+Create a `.env` file in `frontend/`:
+```env
+VITE_API_URL=http://localhost:5000/api/v1
+```
+Run the app: `npm run dev`
 
-This repository includes two GitHub Actions workflows:
-- **`ci.yml`**: Runs on PRs to `main`. Spins up containers via `docker-compose.test.yml` and runs integration tests.
-- **`deploy.yml`**: Runs on pushes to `main`. Builds Docker images, pushes them to GitHub Container Registry (GHCR), and triggers Render deployment hooks.
+---
 
-To enable automatic deployment, configure the following secrets in your GitHub repository:
-- `VITE_STRIPE_PUBLISHABLE_KEY`
-- `RENDER_CORE_HOOK`
-- `RENDER_PAYMENT_HOOK`
-- `RENDER_FRONTEND_HOOK`
+## 👨‍💻 Author
 
-## Inter-Service Communication
+**Nandhu Babu**  
+- GitHub: [@nandhubabu](https://github.com/nandhubabu)
+- Portfolio: *(Add your portfolio link here)*
 
-The Core API and Payment API communicate over the internal Docker network (`aethel-network`). The Core API uses an internal HTTP client with exponential backoff and circuit breaker patterns to request payment intents. The Payment API notifies the Core API of payment success/failure via a secure webhook using an `X-Service-Secret` header.
+---
+*If you like this project, please leave a ⭐ on the repository!*
