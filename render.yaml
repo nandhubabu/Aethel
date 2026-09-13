@@ -1,6 +1,7 @@
 services:
   - type: web
     name: aethel-core-api
+    plan: free
     env: node
     rootDir: core-api
     buildCommand: npm install
@@ -19,6 +20,7 @@ services:
 
   - type: web
     name: aethel-payment-api
+    plan: free
     env: node
     rootDir: payment-api
     buildCommand: npm install
