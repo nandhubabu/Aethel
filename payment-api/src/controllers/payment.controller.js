@@ -2,6 +2,7 @@ const razorpay = require('../config/stripe'); // file still named stripe.js for 
 const Transaction = require('../models/Transaction');
 const { AppError } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
+const { env } = require('../config/env');
 
 /**
  * POST /api/v1/payments/create-order
@@ -29,6 +30,7 @@ async function createPaymentOrder(req, res, next) {
           message: 'Payment order already exists (idempotent).',
           data: {
             razorpayOrderId: existing.razorpayOrderId,
+            razorpayKeyId: env.razorpayKeyId,
             amount: existing.amount,
             currency: existing.currency,
             transactionId: existing._id,
@@ -78,6 +80,7 @@ async function createPaymentOrder(req, res, next) {
       message: 'Razorpay order created.',
       data: {
         razorpayOrderId: razorpayOrder.id,
+        razorpayKeyId: env.razorpayKeyId,
         amount: amountInPaise,
         currency: currency.toUpperCase(),
         transactionId: transaction._id,

@@ -4,11 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ShieldCheck, CreditCard, Loader } from 'lucide-react';
 
-const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID || '';
-
 const Checkout = () => {
   const [orderId, setOrderId] = useState('');
   const [razorpayOrderId, setRazorpayOrderId] = useState('');
+  const [razorpayKeyId, setRazorpayKeyId] = useState('');
   const [amount, setAmount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
@@ -33,6 +32,7 @@ const Checkout = () => {
         const res = await apiClient.post('/orders/checkout', { shippingAddress: mockAddress });
         setOrderId(res.data.orderId);
         setRazorpayOrderId(res.data.razorpayOrderId);
+        setRazorpayKeyId(res.data.razorpayKeyId || import.meta.env.VITE_RAZORPAY_KEY_ID || ''); // Fallback for idempotent branch or old frontend code
         setAmount(res.data.totalAmount);
       } catch (err) {
         setError(err.message || 'Failed to initiate checkout. Is your cart empty?');
@@ -53,7 +53,7 @@ const Checkout = () => {
     setPaying(true);
 
     const options = {
-      key: RAZORPAY_KEY_ID,
+      key: razorpayKeyId,
       amount: Math.round(amount * 100), // In paise
       currency: 'INR',
       name: 'Aethel Marketplace',

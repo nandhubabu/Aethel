@@ -80,7 +80,7 @@ async function checkout(req, res, next) {
       idempotencyKey,
     });
 
-    const { razorpayOrderId, transactionId } = paymentResponse.data.data;
+    const { razorpayOrderId, transactionId, razorpayKeyId } = paymentResponse.data.data;
 
     // 6. Create order (paymentIntentId field stores razorpayOrderId)
     const order = await Order.create({
@@ -101,6 +101,7 @@ async function checkout(req, res, next) {
       data: {
         orderId: order._id,
         razorpayOrderId,
+        razorpayKeyId,
         transactionId,
         totalAmount,
       },
