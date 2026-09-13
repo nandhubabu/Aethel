@@ -2,7 +2,7 @@
 
 > A premium, highly scalable, and futuristic E-Commerce platform built with a microservices architecture.
 
-![Aethel Cover Image](https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=2000&auto=format&fit=crop) *(Placeholder for Cover Image)*
+![Aethel Cover Image](./assets/cover.png)
 
 ## 🚀 Project Overview
 
@@ -118,7 +118,7 @@ Run the app: `npm run dev`
 
 **Nandhu Babu**  
 - GitHub: [@nandhubabu](https://github.com/nandhubabu)
-- Portfolio: *(Add your portfolio link here)*
+- Portfolio: [https://nandhubabu.github.io/My_Portfolio/](https://nandhubabu.github.io/My_Portfolio/)
 
 ---
 *If you like this project, please leave a ⭐ on the repository!*
