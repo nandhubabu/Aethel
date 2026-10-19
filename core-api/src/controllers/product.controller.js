@@ -1,6 +1,7 @@
 const Product = require('../models/Product');
 const { AppError } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
+const productCache = require('../utils/productCache');
 
 /**
  * GET /api/v1/products
@@ -8,6 +9,19 @@ const logger = require('../utils/logger');
  */
 async function getProducts(req, res, next) {
   try {
+    // ── Cache Lookup ──────────────────────────────────────────
+    // Build a deterministic key from all query params (sorted for consistency).
+    // If we have a cached result for this exact query, return it immediately
+    // and signal a cache HIT via res.locals so the responseTime middleware
+    // can set the X-Cache header.
+    const cacheKey = productCache.buildKey(req.query);
+    const cached = productCache.get(cacheKey);
+    if (cached) {
+      res.locals.cacheHit = true;
+      return res.json(cached);
+    }
+    res.locals.cacheHit = false;
+
     const page = parseInt(req.query.page, 10) || 1;
     const limit = Math.min(parseInt(req.query.limit, 10) || 12, 50);
     const skip = (page - 1) * limit;
@@ -42,11 +56,17 @@ async function getProducts(req, res, next) {
       Product.countDocuments(filter),
     ]);
 
-    res.json({
+    const responsePayload = {
       success: true,
       data: products,
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
-    });
+    };
+
+    // ── Cache Store ───────────────────────────────────────────
+    // Store the result for subsequent identical requests within the TTL window.
+    productCache.set(cacheKey, responsePayload);
+
+    res.json(responsePayload);
   } catch (err) {
     next(err);
   }
@@ -94,6 +114,10 @@ async function createProduct(req, res, next) {
 
     logger.info({ productId: product._id, vendor: req.user.id }, 'Product created');
 
+    // ── Cache Invalidation ────────────────────────────────────
+    // A new product changes listing results — bust the entire cache.
+    productCache.invalidateAll();
+
     res.status(201).json({ success: true, message: 'Product created.', data: product });
   } catch (err) {
     next(err);
@@ -122,6 +146,9 @@ async function updateProduct(req, res, next) {
     await product.save();
     logger.info({ productId: product._id }, 'Product updated');
 
+    // ── Cache Invalidation ────────────────────────────────────
+    productCache.invalidateAll();
+
     res.json({ success: true, message: 'Product updated.', data: product });
   } catch (err) {
     next(err);
@@ -144,6 +171,9 @@ async function deleteProduct(req, res, next) {
     product.isActive = false;
     await product.save();
     logger.info({ productId: product._id }, 'Product soft-deleted');
+
+    // ── Cache Invalidation ────────────────────────────────────
+    productCache.invalidateAll();
 
     res.json({ success: true, message: 'Product deleted.' });
   } catch (err) {

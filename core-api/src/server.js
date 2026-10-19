@@ -9,7 +9,9 @@ const { validateEnv, env } = require('./config/env');
 const { connectDB, disconnectDB } = require('./config/db');
 const { errorHandler } = require('./middleware/errorHandler');
 const { apiLimiter } = require('./middleware/rateLimiter');
+const { responseTime } = require('./middleware/responseTime');
 const logger = require('./utils/logger');
+const productCache = require('./utils/productCache');
 
 // Route imports
 const authRoutes = require('./routes/auth.routes');
@@ -25,6 +27,9 @@ validateEnv();
 const app = express();
 
 // ── Global Middleware ──────────────────────────────────────
+// responseTime MUST be first — it starts the clock on every request
+// and attaches X-Response-Time + X-Cache to every response.
+app.use(responseTime);
 app.use(helmet());
 app.use(cors({
   origin: function (origin, callback) {
@@ -43,7 +48,12 @@ app.use(apiLimiter);
 
 // ── Health Check ───────────────────────────────────────────
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'core-api', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    service: 'core-api',
+    timestamp: new Date().toISOString(),
+    cache: productCache.stats(),
+  });
 });
 
 // ── API Routes ─────────────────────────────────────────────

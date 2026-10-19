@@ -7,6 +7,58 @@ const { generateIdempotencyKey } = require('../utils/idempotency');
 const logger = require('../utils/logger');
 
 /**
+ * Atomically decrement stock for a list of order items.
+ *
+ * Uses a conditional findOneAndUpdate with $inc so that:
+ *   - The operation is a single atomic DB round-trip per item (no race window).
+ *   - If stock has dropped below the required quantity since checkout
+ *     (e.g. another user bought the last unit concurrently), the update
+ *     returns null and we log a stock-exhaustion warning rather than
+ *     driving the field negative.
+ *
+ * Interview talking point:
+ *   "The naive approach — read stock, check quantity, then decrement — has a
+ *    classic TOCTOU race: two concurrent buyers can both pass the stock check
+ *    and both decrement, resulting in negative inventory. I replaced it with a
+ *    single MongoDB atomic findOneAndUpdate that only decrements when
+ *    stock >= quantity, guaranteeing correctness even under high concurrency
+ *    without application-level locks."
+ *
+ * @param {Array<{product: ObjectId, quantity: number, title: string}>} items
+ */
+async function atomicDecrementInventory(items) {
+  const results = await Promise.allSettled(
+    items.map((item) =>
+      Product.findOneAndUpdate(
+        {
+          _id: item.product,
+          stock: { $gte: item.quantity }, // Atomic guard — only update if enough stock
+        },
+        { $inc: { stock: -item.quantity } },
+        { new: true }
+      )
+    )
+  );
+
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i];
+    const item = items[i];
+    if (result.status === 'rejected' || result.value === null) {
+      // null means the filter didn't match — stock was already exhausted
+      logger.warn(
+        { productId: item.product, requested: item.quantity },
+        'Inventory decrement skipped — insufficient stock (race condition guard triggered)'
+      );
+    } else {
+      logger.info(
+        { productId: item.product, newStock: result.value.stock },
+        'Inventory decremented atomically'
+      );
+    }
+  }
+}
+
+/**
  * POST /api/v1/orders/checkout
  * Initiate checkout: validate cart, calculate total, call Payment API, create order.
  */
@@ -138,17 +190,15 @@ async function verifyPayment(req, res, next) {
         order.orderStatus = 'confirmed';
         await order.save();
 
-        // Decrement stock
-        for (const item of order.items) {
-          await Product.findByIdAndUpdate(item.product, {
-            $inc: { stock: -item.quantity },
-          });
-        }
+        // ── Atomic Inventory Decrement ──────────────────────────────
+        // Uses a conditional findOneAndUpdate so the decrement only happens
+        // when stock >= quantity, preventing negative inventory under concurrency.
+        await atomicDecrementInventory(order.items);
 
         // Clear cart
         await Cart.findOneAndUpdate({ user: req.user.id }, { $set: { items: [] } });
 
-        logger.info({ orderId: order._id }, 'Payment verified, order confirmed, inventory decremented');
+        logger.info({ orderId: order._id }, 'Payment verified, order confirmed, inventory decremented atomically');
       }
 
       return res.json({
@@ -264,17 +314,15 @@ async function updateOrderStatus(req, res, next) {
     if (paymentStatus === 'paid') {
       order.orderStatus = 'confirmed';
 
-      // Decrement stock for each item
-      for (const item of order.items) {
-        await Product.findByIdAndUpdate(item.product, {
-          $inc: { stock: -item.quantity },
-        });
-      }
+      // ── Atomic Inventory Decrement ──────────────────────────────
+      // Conditional atomic update: only decrements if stock >= quantity.
+      // This is the webhook-driven path — the same race-condition guard applies.
+      await atomicDecrementInventory(order.items);
 
       // Clear user's cart
       await Cart.findOneAndUpdate({ user: order.user }, { $set: { items: [] } });
 
-      logger.info({ orderId: order._id }, 'Order confirmed, inventory decremented, cart cleared');
+      logger.info({ orderId: order._id }, 'Order confirmed, inventory decremented atomically, cart cleared');
     }
 
     if (paymentStatus === 'failed') {
