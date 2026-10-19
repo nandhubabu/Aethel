@@ -24,8 +24,9 @@ jobs:
           echo "MONGO_URI=${{ secrets.MONGO_URI_TEST || 'mongodb://mongodb:27017/aethel_test' }}" >> .env
           echo "JWT_SECRET=test_jwt_secret_ci" >> .env
           echo "SERVICE_SECRET=test_service_secret_ci" >> .env
-          echo "STRIPE_SECRET_KEY=sk_test_mock" >> .env
-          echo "STRIPE_WEBHOOK_SECRET=whsec_mock" >> .env
+          echo "RAZORPAY_KEY_ID=rzp_test_ci" >> .env
+          echo "RAZORPAY_KEY_SECRET=test_razorpay_secret_ci" >> .env
+          echo "RAZORPAY_WEBHOOK_SECRET=test_razorpay_webhook_secret_ci" >> .env
 
       # We can optionally spin up a local MongoDB container for tests if MONGO_URI_TEST isn't provided
       - name: Start MongoDB (if no external DB provided)

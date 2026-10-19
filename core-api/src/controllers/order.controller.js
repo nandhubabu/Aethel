@@ -5,6 +5,7 @@ const { AppError } = require('../middleware/errorHandler');
 const { paymentRequest } = require('../utils/paymentClient');
 const { generateIdempotencyKey } = require('../utils/idempotency');
 const logger = require('../utils/logger');
+const productCache = require('../utils/productCache');
 
 /**
  * Atomically decrement stock for a list of order items.
@@ -56,6 +57,9 @@ async function atomicDecrementInventory(items) {
       );
     }
   }
+
+  // Bust cached product listings so customers immediately see updated stock numbers
+  productCache.invalidateAll();
 }
 
 /**

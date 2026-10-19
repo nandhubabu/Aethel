@@ -34,9 +34,9 @@ function request(baseUrl, method, path, body = null, headers = {}) {
       res.on('data', (chunk) => { raw += chunk; });
       res.on('end', () => {
         try {
-          resolve({ status: res.statusCode, data: JSON.parse(raw) });
+          resolve({ status: res.statusCode, headers: res.headers, data: JSON.parse(raw) });
         } catch {
-          resolve({ status: res.statusCode, data: raw });
+          resolve({ status: res.statusCode, headers: res.headers, data: raw });
         }
       });
     });
@@ -89,10 +89,12 @@ async function run() {
 
   console.log('\n── Core API Tests ──');
 
-  await test('Health check returns 200', async () => {
+  await test('Health check returns 200 and cache stats', async () => {
     const res = await request(CORE_API, 'GET', '/health');
     assert(res.status === 200, `Expected 200, got ${res.status}`);
     assert(res.data.service === 'core-api', 'Wrong service name');
+    assert(res.data.cache !== undefined, 'Expected cache stats in health response');
+    assert(res.headers['x-response-time'] !== undefined, 'Expected X-Response-Time header');
   });
 
   await test('404 for unknown route', async () => {
@@ -126,10 +128,17 @@ async function run() {
     assert(res.status === 401, `Expected 401, got ${res.status}`);
   });
 
-  await test('Get products (empty list ok)', async () => {
-    const res = await request(CORE_API, 'GET', '/api/v1/products');
-    assert(res.status === 200, `Expected 200, got ${res.status}`);
-    assert(Array.isArray(res.data.data), 'Expected array');
+  await test('Get products (verifies cache and latency headers)', async () => {
+    const res1 = await request(CORE_API, 'GET', '/api/v1/products');
+    assert(res1.status === 200, `Expected 200, got ${res1.status}`);
+    assert(Array.isArray(res1.data.data), 'Expected array');
+    assert(res1.headers['x-response-time'], 'Expected X-Response-Time header');
+    assert(res1.headers['x-cache'] === 'MISS', `Expected X-Cache: MISS on first call, got ${res1.headers['x-cache']}`);
+
+    // Second call for identical query should HIT cache
+    const res2 = await request(CORE_API, 'GET', '/api/v1/products');
+    assert(res2.status === 200, `Expected 200, got ${res2.status}`);
+    assert(res2.headers['x-cache'] === 'HIT', `Expected X-Cache: HIT on second call, got ${res2.headers['x-cache']}`);
   });
 
   await test('Get cart (creates empty)', async () => {
@@ -148,7 +157,7 @@ async function run() {
   });
 
   await test('Payment endpoint rejects unauthenticated', async () => {
-    const res = await request(PAYMENT_API, 'POST', '/api/v1/payments/create-intent', {
+    const res = await request(PAYMENT_API, 'POST', '/api/v1/payments/create-order', {
       amount: 1000,
     });
     assert(res.status === 403, `Expected 403, got ${res.status}`);

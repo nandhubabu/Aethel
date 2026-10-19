@@ -5,7 +5,15 @@
  * to every HTTP response as the `X-Response-Time` header.
  *
  * Also conditionally attaches `X-Cache` (HIT / MISS) when the route sets
- * `res.locals.cacheHit = true` before responding.
+ * `res.locals.cacheHit` before sending the response.
+ *
+ * Technical notes:
+ *  - Uses process.hrtime.bigint() for nanosecond-precision timing.
+ *  - Monkey-patches res.writeHead() to inject headers just before they
+ *    are flushed to the socket. This is the only reliable way to attach
+ *    custom headers to an Express response — `res.on('finish')` is too
+ *    late (headers already sent), and there is no public `'header'` event
+ *    on Express's response object.
  *
  * Interview talking point:
  *  "I added a lightweight observability layer that stamps every HTTP response
@@ -23,24 +31,24 @@
  */
 function responseTime(req, res, next) {
   const startNs = process.hrtime.bigint();
+  const originalWriteHead = res.writeHead;
 
-  // Hook into the `finish` event to record the actual end time
-  res.on('finish', () => {
-    const durationNs = process.hrtime.bigint() - startNs;
-    const durationMs = (Number(durationNs) / 1_000_000).toFixed(3);
-    // Headers may have already been sent by the time `finish` fires,
-    // so use `setHeader` only if not yet sent (Express handles this gracefully).
-    res.setHeader('X-Response-Time', `${durationMs}ms`);
-  });
+  res.writeHead = function patchedWriteHead(...args) {
+    if (!res.headersSent) {
+      const durationNs = process.hrtime.bigint() - startNs;
+      const durationMs = (Number(durationNs) / 1_000_000).toFixed(3);
+      try {
+        res.setHeader('X-Response-Time', `${durationMs}ms`);
 
-  // Attach X-Response-Time BEFORE headers are sent so it's definitely included
-  res.on('header', () => {
-    // X-Cache reflects whether this response came from the in-memory cache
-    const cacheStatus = res.locals.cacheHit ? 'HIT' : 'MISS';
-    if (req.path.startsWith('/api/v1/products')) {
-      res.setHeader('X-Cache', cacheStatus);
+        const requestPath = req.originalUrl || req.path || '';
+        if (requestPath.includes('/api/v1/products')) {
+          res.setHeader('X-Cache', res.locals && res.locals.cacheHit ? 'HIT' : 'MISS');
+        }
+      } catch (_) {}
     }
-  });
+
+    return originalWriteHead.apply(this, args);
+  };
 
   next();
 }

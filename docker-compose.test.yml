@@ -39,8 +39,9 @@ services:
       - MONGO_URI=${MONGO_URI}
       - JWT_SECRET=test-jwt-secret-do-not-use-in-production
       - SERVICE_SECRET=test-service-secret-do-not-use-in-production
-      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
-      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID:-rzp_test_placeholder}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET:-test_secret_placeholder}
+      - RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET:-test_webhook_placeholder}
       - CORE_SERVICE_URL=http://core-api:5000
     networks:
       - aethel-test-network

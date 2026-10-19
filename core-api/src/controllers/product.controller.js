@@ -203,6 +203,9 @@ async function addReview(req, res, next) {
     product.recalculateRating();
     await product.save();
 
+    // Invalidate product cache so average rating changes appear in listings
+    productCache.invalidateAll();
+
     res.status(201).json({ success: true, message: 'Review added.', data: product });
   } catch (err) {
     next(err);
